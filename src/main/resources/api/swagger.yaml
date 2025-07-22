@@ -1,0 +1,663 @@
+openapi: 3.0.3
+info:
+  title: "二手优选小程序 API V1.1"
+  description: "这是一个为“二手优选”微信小程序设计的后端API文档，涵盖了用户、商品、订单、消息等核心模块。V1.1修复了与UI不匹配的问题并增加了缺失的接口，本版本为完整版。"
+  version: "1.1.0"
+servers:
+  - url: https://api.example.com/v1
+    description: 生产环境服务器
+
+tags:
+  - name: Auth
+    description: 用户认证
+  - name: Products
+    description: 商品相关操作
+  - name: Categories
+    description: 商品分类
+  - name: Users
+    description: 用户个人中心相关操作
+  - name: Orders
+    description: 订单管理
+  - name: Notifications
+    description: 消息中心
+  - name: Files
+    description: 文件上传服务
+
+paths:
+  # ======================================================
+  # Auth - 认证模块
+  # ======================================================
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: "微信小程序登录"
+      description: "前端调用wx.login()获取code，发送给后端换取自定义登录态（如JWT Token）。"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+                  description: "微信登录凭证 code"
+                  example: "0a3j4H1..."
+      responses:
+        "200":
+          description: "登录成功"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: "JWT Token，后续请求需在Header中携带"
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  user:
+                    $ref: '#/components/schemas/UserProfileVO'
+
+  # ======================================================
+  # Products - 商品模块
+  # ======================================================
+  /products:
+    get:
+      tags:
+        - Products
+      summary: "获取商品列表（首页/搜索/我的发布）"
+      description: "通用商品列表接口。可通过关键词、分类、卖家ID进行筛选。"
+      parameters:
+        - name: query
+          in: query
+          description: "搜索关键词"
+          schema:
+            type: string
+        - name: categoryId
+          in: query
+          description: "分类ID"
+          schema:
+            type: string
+        ## [CHANGE] 新增 sellerId 参数，用于“我的发布”功能
+        - name: sellerId
+          in: query
+          description: "卖家ID。传入 'me' 可查询当前登录用户的商品。"
+          schema:
+            type: string
+        - name: page
+          in: query
+          description: "页码，从1开始"
+          schema:
+            type: integer
+            default: 1
+        - name: size
+          in: query
+          description: "每页数量"
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: "成功返回商品列表"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ProductSummaryVO'
+                  totalPages:
+                    type: integer
+                  totalElements:
+                    type: integer
+    post:
+      tags:
+        - Products
+      summary: "发布新商品"
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProductDTO'
+      responses:
+        "201":
+          description: "商品创建成功"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDetailVO'
+        "400":
+          description: "请求参数错误"
+
+  /products/{id}:
+    get:
+      tags:
+        - Products
+      summary: "获取商品详情"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "商品ID"
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "成功返回商品详情"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDetailVO'
+        "404":
+          description: "商品未找到"
+
+  # ======================================================
+  # Categories - 分类模块
+  # ======================================================
+  /categories:
+    get:
+      tags:
+        - Categories
+      summary: "获取所有商品分类"
+      responses:
+        "200":
+          description: "成功返回分类列表"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CategoryVO'
+
+  # ======================================================
+  # Users - 用户模块
+  # ======================================================
+  /users/me:
+    get:
+      tags:
+        - Users
+      summary: "获取当前用户信息"
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: "成功"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileVO'
+    ## [NEW] 新增 PATCH 方法用于更新用户信息 (对应设置页)
+    patch:
+      tags:
+        - Users
+      summary: "更新当前用户信息"
+      security:
+        - BearerAuth: []
+      requestBody:
+        description: "需要更新的用户字段"
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserDTO'
+      responses:
+        "200":
+          description: "更新成功"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileVO'
+        "400":
+          description: "请求数据无效"
+
+  ## [NEW] 新增接口，获取用户的收藏列表 (对应“我的收藏”页面)
+  /users/me/favorites:
+    get:
+      tags:
+        - Users
+      summary: "获取我的收藏列表"
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: "成功返回收藏的商品列表"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProductSummaryVO'
+    post:
+      tags:
+        - Users
+      summary: "添加商品到收藏夹"
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                productId:
+                  type: string
+                  description: "要收藏的商品ID"
+      responses:
+        "204":
+          description: "收藏成功，无返回内容"
+
+  /users/me/favorites/{productId}:
+    delete:
+      tags:
+        - Users
+      summary: "从收藏夹移除商品"
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          description: "商品ID"
+          schema:
+            type: string
+      responses:
+        "204":
+          description: "取消收藏成功，无返回内容"
+
+  ## [NEW] 新增接口，用于关注/取关用户
+  /users/{id}/follow:
+    post:
+      tags:
+        - Users
+      summary: "关注用户"
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "被关注用户的ID"
+          schema:
+            type: string
+      responses:
+        "204":
+          description: "关注成功"
+    delete:
+      tags:
+        - Users
+      summary: "取消关注用户"
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "被取消关注用户的ID"
+          schema:
+            type: string
+      responses:
+        "204":
+          description: "取消关注成功"
+
+  # ======================================================
+  # Orders - 订单模块
+  # ======================================================
+  /orders:
+    get:
+      tags:
+        - Orders
+      summary: "获取我的订单列表"
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          description: "订单状态: ToPay, ToShip, ToReceive, Completed, Canceled"
+          schema:
+            type: string
+            enum: [ToPay, ToShip, ToReceive, Completed, Canceled]
+      responses:
+        "200":
+          description: "成功返回订单列表"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrderSummaryVO'
+    post:
+      tags:
+        - Orders
+      summary: "创建订单（立即购买）"
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                productId:
+                  type: string
+                quantity:
+                  type: integer
+      responses:
+        "201":
+          description: "订单创建成功"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderSummaryVO'
+
+  # ======================================================
+  # Notifications - 消息模块
+  # ======================================================
+  /notifications:
+    get:
+      tags:
+        - Notifications
+      summary: "获取消息列表"
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: type
+          in: query
+          description: "消息类型: system, transaction"
+          schema:
+            type: string
+            enum: [system, transaction]
+      responses:
+        "200":
+          description: "成功"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NotificationVO'
+
+  # ======================================================
+  # Files - 文件上传模块
+  # ======================================================
+  /files/upload:
+    post:
+      tags:
+        - Files
+      summary: "上传文件（如商品图片、用户头像）"
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: "上传成功"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                    format: uri
+                    example: "https://cdn.example.com/images/12345.jpg"
+
+# ======================================================
+# Reusable Components - 可复用组件
+# ======================================================
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "在请求的Authorization头中添加'Bearer '前缀和Token，例如: 'Bearer ey...'"
+
+  schemas:
+    UserSummaryVO:
+      type: object
+      properties:
+        userId:
+          type: string
+          example: "user_abc"
+        nickname:
+          type: string
+          example: "Emily Chen"
+        avatarUrl:
+          type: string
+          format: uri
+          example: "https://example.com/avatar.jpg"
+        ## [CHANGE] 新增 joinDate 字段以匹配UI显示“2021年加入”
+        joinDate:
+          type: string
+          format: date
+          example: "2021-01-01"
+          
+    UserProfileVO:
+      type: object
+      properties:
+        userId:
+          type: string
+          example: "user_12345678"
+        nickname:
+          type: string
+          example: "Emily Chen"
+        avatarUrl:
+          type: string
+          format: uri
+        joinDate:
+          type: string
+          format: date
+          example: "2021-01-01"
+          
+    ## [NEW] 新增 UpdateUserDTO 用于更新用户信息
+    UpdateUserDTO:
+      type: object
+      properties:
+        nickname:
+          type: string
+          description: "新昵称 (可选)"
+        avatarUrl:
+          type: string
+          format: uri
+          description: "新头像URL (可选, 前端先上传文件获取URL)"
+
+    ProductSummaryVO:
+      type: object
+      properties:
+        productId:
+          type: string
+          example: "prod_123"
+        title:
+          type: string
+          example: "全新时尚连衣裙"
+        mainImageUrl:
+          type: string
+          format: uri
+          example: "https://example.com/dress.jpg"
+        price:
+          type: number
+          format: float
+          example: 85.00
+
+    ProductDetailVO:
+      type: object
+      properties:
+        productId:
+          type: string
+          example: "prod_456"
+        title:
+          type: string
+          example: "复古牛仔夹克"
+        description:
+          type: string
+          example: "经典牛仔夹克，状况良好。M 码。非常适合叠穿。"
+        price:
+          type: number
+          format: float
+          example: 150.00
+        imageUrls:
+          type: array
+          items:
+            type: string
+            format: uri
+        stock:
+          type: integer
+          example: 1
+        sellerInfo:
+          $ref: '#/components/schemas/UserSummaryVO'
+        isFavorite:
+          type: boolean
+          description: "当前用户是否已收藏该商品"
+          example: false
+        ## [CHANGE] 新增 isFollowingSeller 字段，用于控制“关注”按钮的状态
+        isFollowingSeller:
+          type: boolean
+          description: "当前用户是否已关注该卖家"
+          example: true
+        postedAt:
+          type: string
+          format: date-time
+        reviews:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReviewVO'
+            
+    CreateProductDTO:
+      type: object
+      required: [title, description, price, stock, categoryId, imageUrls]
+      properties:
+        title:
+          type: string
+          example: "九成新山地自行车"
+        description:
+          type: string
+          example: "详细描述一下你的宝贝吧..."
+        price:
+          type: number
+          format: float
+        stock:
+          type: integer
+          default: 1
+        categoryId:
+          type: string
+          example: "cat_digital"
+        imageUrls:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            format: uri
+            
+    CategoryVO:
+      type: object
+      properties:
+        categoryId:
+          type: string
+          example: "cat_fashion"
+        name:
+          type: string
+          example: "时尚服饰"
+        iconUrl:
+          type: string
+          format: uri
+          
+    OrderSummaryVO:
+      type: object
+      properties:
+        orderId:
+          type: string
+          example: "order_789"
+        status:
+          type: string
+          example: "待付款"
+        totalPrice:
+          type: number
+          format: float
+          example: 128.00
+        productCount:
+          type: integer
+          example: 2
+        orderItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItemVO'
+            
+    OrderItemVO:
+      type: object
+      properties:
+        productId:
+          type: string
+        title:
+          type: string
+          example: "复古风格纯棉格子衬衫"
+        mainImageUrl:
+          type: string
+          format: uri
+        price:
+          type: number
+          format: float
+        quantity:
+          type: integer
+          
+    ReviewVO:
+      type: object
+      properties:
+        reviewId:
+          type: string
+        author:
+          $ref: '#/components/schemas/UserSummaryVO'
+        content:
+          type: string
+          example: "很棒的夹克！和描述的一模一样。"
+        createdAt:
+          type: string
+          format: date-time
+          
+    NotificationVO:
+      type: object
+      properties:
+        notificationId:
+          type: string
+        type:
+          type: string
+          enum: [system, transaction]
+          example: "system"
+        title:
+          type: string
+          example: "您的商品已被下架"
+        content:
+          type: string
+          example: "由于违反社区规定，您的商品'违规商品名称'已被下架处理。"
+        createdAt:
+          type: string
+          format: date-time
+        isRead:
+          type: boolean
+          example: false
