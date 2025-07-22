@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git branch -m master main)",
+      "Bash(git add src/main/java/cn/edu/guet/secondhandtransactionbackend/dto/ .claude/)"
+    ],
+    "deny": []
+  }
+}
