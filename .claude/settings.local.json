@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(git branch -m master main)",
-      "Bash(git add src/main/java/cn/edu/guet/secondhandtransactionbackend/dto/ .claude/)"
+      "Bash(git add src/main/java/cn/edu/guet/secondhandtransactionbackend/dto/ .claude/)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nchore: Add .gitkeep to track empty dto directories\n\nAdded .gitkeep files to the subdirectories within the dto folder to ensure Git tracks these currently empty directories.\nAlso, tracking the .claude directory for project-specific settings.\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git push origin main)",
+      "Bash(git add .)"
     ],
     "deny": []
   }
