@@ -16,21 +16,24 @@ public class ProductImage {
     /**
      * 图片ID (主键)
      */
-    @TableId(type = IdType.AUTO)
+    @TableId(value = "product_image_id", type = IdType.AUTO)
     private Long productImageId;
 
     /**
      * 所属商品ID (外键)
      */
+    @TableField(value = "product_id")
     private Long productId;
 
     /**
      * 图片存储URL
      */
+    @TableField(value = "image_url")
     private String imageUrl;
 
     /**
      * 显示顺序 (0为主图)
      */
+    @TableField(value = "display_order")
     private Integer displayOrder;
 }

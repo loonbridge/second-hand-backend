@@ -17,31 +17,36 @@ public class Review {
     /**
      * 评论ID (主键)
      */
-    @TableId(type = IdType.AUTO)
+    @TableId(value = "review_id", type = IdType.AUTO)
     private Long reviewId;
 
     /**
      * 评论内容
      */
+    @TableField(value = "content")
     private String content;
 
     /**
      * 评分 (1-5)
      */
+    @TableField(value = "rating")
     private Integer rating;
 
     /**
      * 商品ID (外键)
      */
+    @TableField(value = "product_id")
     private Long productId;
 
     /**
      * 作者用户ID (外键)
      */
+    @TableField(value = "user_id")
     private Long userId;
 
     /**
      * 评论时间
      */
+    @TableField(value = "created_at")
     private LocalDateTime createdAt;
 }

@@ -16,16 +16,18 @@ public class Category {
     /**
      * 分类ID (主键)
      */
-    @TableId(type = IdType.AUTO)
+    @TableId(value = "category_id", type = IdType.AUTO)
     private Long categoryId;
 
     /**
      * 分类名称
      */
+    @TableField(value = "name")
     private String name;
 
     /**
      * 图标链接
      */
+    @TableField(value = "icon_url")
     private String iconUrl;
 }

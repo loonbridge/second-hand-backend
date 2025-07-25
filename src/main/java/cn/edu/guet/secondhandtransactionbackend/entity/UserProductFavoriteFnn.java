@@ -8,38 +8,26 @@ import java.time.LocalDateTime;
 import lombok.Data;
 
 /**
- * 用户实体表
- * @TableName user
+ * [行为]用户收藏商品(n-n)关系表
+ * @TableName user_product_favorite_fnn
  */
-@TableName(value ="user")
+@TableName(value ="user_product_favorite_fnn")
 @Data
-public class User {
+public class UserProductFavoriteFnn {
     /**
-     * 用户ID (主键)
+     * 用户ID (主键, 外键)
      */
-    @TableId(value = "user_id", type = IdType.AUTO)
+    @TableId(value = "user_id")
     private Long userId;
 
     /**
-     * 微信openid
+     * 商品ID (主键, 外键)
      */
-    @TableField(value = "openid")
-    private String openid;
+    @TableId(value = "product_id")
+    private Long productId;
 
     /**
-     * 昵称
-     */
-    @TableField(value = "nickname")
-    private String nickname;
-
-    /**
-     * 头像链接
-     */
-    @TableField(value = "avatar_url")
-    private String avatarUrl;
-
-    /**
-     * 创建时间
+     * 收藏时间
      */
     @TableField(value = "created_at")
     private LocalDateTime createdAt;

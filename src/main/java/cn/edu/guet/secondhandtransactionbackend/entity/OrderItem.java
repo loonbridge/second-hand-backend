@@ -17,26 +17,30 @@ public class OrderItem {
     /**
      * 订单商品项ID (主键)
      */
-    @TableId(type = IdType.AUTO)
+    @TableId(value = "order_item_id", type = IdType.AUTO)
     private Long orderItemId;
 
     /**
      * 所属订单ID (外键)
      */
+    @TableField(value = "order_id")
     private Long orderId;
 
     /**
      * 关联商品ID (外键)
      */
+    @TableField(value = "product_id")
     private Long productId;
 
     /**
      * 购买数量
      */
+    @TableField(value = "quantity")
     private Integer quantity;
 
     /**
      * 购买时单价
      */
+    @TableField(value = "price_at_purchase")
     private BigDecimal priceAtPurchase;
 }
