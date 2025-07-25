@@ -25,9 +25,15 @@ public class productDetailBO  {
 
     private LocalDateTime CreatedAt;
 
+    /*
+    *TODO：是需要实现UserSummaryBO类。
+    * */
+
     private  UserSummaryBO sellerInfo;
 
     private List<String> imageUrls; // 商品图片列表
+
+//    TODO：需要实现ReviewBO类。
 
     private List<ReviewBO> reviews; // 商品评论列表
 }

@@ -47,7 +47,7 @@ public class ProductController implements ProductsApi {
     @Override
     public ResponseEntity<ProductDetailVO> productsIdGet(String id) {
 
-        //后续要引入authorization
+        //TODO：后续要引入authorization
 
         productDetailBO productDetailBO = productService.getProductDetailById(Long.valueOf(id), null);
 

@@ -43,7 +43,7 @@ public class ProductAssembler {
                 .totalPages(products.size() / size + (products.size() % size == 0 ? 0 : 1))
                 .totalElements(products.size());
     }
-
+@SneakyThrows
     public static ProductDetailVO toProductDetailVO(productDetailBO productDetailBO) {
 
         return new ProductDetailVO()
@@ -51,15 +51,21 @@ public class ProductAssembler {
                 .title(productDetailBO.getTitle())
                 .description(productDetailBO.getDescription())
                 .price(productDetailBO.getPrice().floatValue())
-                .imageUrls(productDetailBO.getImageUrls() != null ? productDetailBO.getMainImageUrl().toString() : null)
+                .imageUrls(productDetailBO.getImageUrls()!=null ? productDetailBO.getImageUrls().stream()
+                        .map(URI::new).toList() : null)
+
                 .stock(productDetailBO.getStock())
+//                TODO：需要实现toUserSummary的转换器。
                 .sellerInfo(productDetailBO.getSellerInfo() != null ? productDetailBO.getSellerInfo().toUserSummaryVO() : null)
                 .isFavorite(productDetailBO.getIsFavorite())
                 .isFollowingSeller(productDetailBO.getIsFollowingSeller())
                 .postedAt(productDetailBO.getCreatedAt())
+//                TODO：需要实现ReviewVO的转换器。
                 .reviews(productDetailBO.getReviews() != null ? productDetailBO.getReviews().stream().map(review -> review.toReviewVO()).toList() : null);
 
 
 
     }
+
+
 }

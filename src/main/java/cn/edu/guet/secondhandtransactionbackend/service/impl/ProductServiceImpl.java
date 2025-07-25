@@ -99,9 +99,13 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product>
                         .eq("following_user_id", product.getUserId())
         ));
 
+       /*
+       *
+        * TODO:需要实现 UserSummaryBO UserService.getUserInfoById(Long userId)方法
+       * */
         target.setSellerInfo(userService.getUserInfoById(product.getUserId()));   ;
 
-
+//        TODO：需要实现 ReviewBO   ReviewService.getReviewsByProductId(Long productId)方法
         target.setReviews(reviewService.getReviewsByProductId(productId));
 
 
