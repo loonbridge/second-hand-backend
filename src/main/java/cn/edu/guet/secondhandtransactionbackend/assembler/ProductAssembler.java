@@ -15,6 +15,11 @@ import java.util.List;
 
 public class ProductAssembler {
 
+
+    private ProductAssembler() {
+        // 私有构造函数，防止实例化
+    }
+
     //lombok处理受检异常
     @SneakyThrows
     public static ProductSummaryVO toSummaryVO(ProductSummaryBO product)  {

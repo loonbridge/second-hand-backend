@@ -9,9 +9,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
-@Accessors(chain = true)
 //集成Product实体类的属性，product的属性都要返回
 //需要的实体有，product，user,review
+@Accessors(chain = true)
 public class productDetailBO  {
     private Long productId;
     private String title;
