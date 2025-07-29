@@ -15,6 +15,8 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import org.springframework.context.annotation.Lazy;
+
 import java.util.List;
 
 /**
@@ -28,13 +30,18 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
     private final UserMapper userMapper;
 
-    private  final ProductService productService;
+    private ProductService productService;
 
     @Autowired
-    public UserServiceImpl(UserMapper userMapper,ProductService productService) {
-        // 通过构造函数注入 UserMapper 实例
+    public UserServiceImpl(UserMapper userMapper) {
+        // 移除构造函数中的 ProductService 注入
         this.userMapper = userMapper;
-        this.productService = productService; // 这里可以注入 ProductService 实例
+    }
+
+    @Autowired
+    @Lazy // 继续使用 @Lazy 以确保安全
+    public void setProductService(ProductService productService) {
+        this.productService = productService;
     }
 
 

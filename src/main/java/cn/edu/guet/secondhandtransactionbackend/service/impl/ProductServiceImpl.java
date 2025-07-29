@@ -3,15 +3,15 @@ package cn.edu.guet.secondhandtransactionbackend.service.impl;
 import cn.edu.guet.secondhandtransactionbackend.assembler.ProductAssembler;
 import cn.edu.guet.secondhandtransactionbackend.assembler.UserAssembler;
 import cn.edu.guet.secondhandtransactionbackend.dto.product.CreateProductDTO;
-import cn.edu.guet.secondhandtransactionbackend.dto.product.ProductSummaryBO;
 import cn.edu.guet.secondhandtransactionbackend.dto.product.ProductDetailBO;
+import cn.edu.guet.secondhandtransactionbackend.dto.product.ProductSummaryBO;
 import cn.edu.guet.secondhandtransactionbackend.entity.*;
+import cn.edu.guet.secondhandtransactionbackend.mapper.ProductMapper;
 import cn.edu.guet.secondhandtransactionbackend.service.*;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import cn.edu.guet.secondhandtransactionbackend.mapper.ProductMapper;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -91,11 +91,11 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product>
                         .setMainImageUrl(productImageService.getOne(
                                 new QueryWrapper<ProductImage>()
                                         .eq("product_id", product.getProductId())
-                                        .eq("disaplay_order", 0)
+                                        .eq("display_order", 0)
                         ) != null ? productImageService.getOne(
                                 new QueryWrapper<ProductImage>()
                                         .eq("product_id", product.getProductId())
-                                        .eq("disaplay_order", 0)
+                                        .eq("display_order", 0)
                         ).getImageUrl() : null)
                 ).toList();
 
