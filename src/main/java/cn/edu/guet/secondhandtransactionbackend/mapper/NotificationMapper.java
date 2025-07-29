@@ -2,6 +2,7 @@ package cn.edu.guet.secondhandtransactionbackend.mapper;
 
 import cn.edu.guet.secondhandtransactionbackend.entity.Notification;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import org.apache.ibatis.annotations.Mapper;
 
 /**
 * @author Sammy
@@ -9,6 +10,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 * @createDate 2025-07-25 18:13:45
 * @Entity cn.edu.guet.secondhandtransactionbackend.entity.Notification
 */
+@Mapper
 public interface NotificationMapper extends BaseMapper<Notification> {
 
 }

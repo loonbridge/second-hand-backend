@@ -4,8 +4,11 @@ import cn.edu.guet.secondhandtransactionbackend.dto.CreateOrderRequest;
 import cn.edu.guet.secondhandtransactionbackend.dto.WeChatPayParamsVO;
 import cn.edu.guet.secondhandtransactionbackend.dto.order.OrderListBO;
 import cn.edu.guet.secondhandtransactionbackend.dto.order.OrderSummaryBO;
+import cn.edu.guet.secondhandtransactionbackend.entity.Order;
 import cn.edu.guet.secondhandtransactionbackend.entity.Product;
 import cn.edu.guet.secondhandtransactionbackend.entity.ProductImage;
+import cn.edu.guet.secondhandtransactionbackend.mapper.OrderMapper;
+import cn.edu.guet.secondhandtransactionbackend.service.OrderService;
 import cn.edu.guet.secondhandtransactionbackend.service.ProductImageService;
 import cn.edu.guet.secondhandtransactionbackend.service.ProductService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -13,14 +16,10 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import cn.edu.guet.secondhandtransactionbackend.entity.Order;
-import cn.edu.guet.secondhandtransactionbackend.service.OrderService;
-import cn.edu.guet.secondhandtransactionbackend.mapper.OrderMapper;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -35,18 +34,17 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order>
         implements OrderService {
 
 
-    private OrderMapper orderMapper;
-
-    private ProductService productService;
-
-    private ProductImageService productImageService;
-
-
+    private final OrderMapper orderMapper;
+    private final ProductService productService;
+    private final ProductImageService productImageService;
 
     @Autowired
-
-    public OrderServiceImpl(OrderMapper orderMapper) {
+    public OrderServiceImpl(OrderMapper orderMapper,
+                            ProductService productService,
+                            ProductImageService productImageService) {
         this.orderMapper = orderMapper;
+        this.productService = productService;
+        this.productImageService = productImageService;
     }
 
     @Override
@@ -68,7 +66,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order>
         // 如果当前页没有订单，直接返回空结果
         if (CollectionUtils.isEmpty(orderRecords)) {
 //            TODO 解决
-//            return new OrderListBO(List.of(), orderPage.getPages(), orderPage.getTotal());
+
+            return new OrderListBO().setItems(List.of()).setTotalPages((int) orderPage.getPages()).
+                    setTotalElements((int) orderPage.getTotal());
         }
 
         // --- 2. 一次性获取所有关联的商品和图片信息，避免N+1查询 ---
@@ -86,7 +86,6 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order>
         // 一次性查询所有商品的主图（假设有对应方法）
         //TODO： 缺少获取主图方法。（实现了，但是未认证。）
 //        Map<Long, String> mainImageMap = productImageService.listMainImagesByProductIds(productIds);
-
 
 
         LambdaQueryWrapper<ProductImage> productImageLambdaQueryWrapper = new LambdaQueryWrapper<>();

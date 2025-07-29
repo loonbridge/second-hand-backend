@@ -2,6 +2,7 @@ package cn.edu.guet.secondhandtransactionbackend.mapper;
 
 import cn.edu.guet.secondhandtransactionbackend.entity.Product;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import org.apache.ibatis.annotations.Mapper;
 
 /**
 * @author Sammy
@@ -9,6 +10,8 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 * @createDate 2025-07-25 18:08:42
 * @Entity cn.edu.guet.secondhandtransactionbackend.entity.Product
 */
+
+@Mapper
 public interface ProductMapper extends BaseMapper<Product> {
 
 }
