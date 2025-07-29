@@ -115,6 +115,8 @@ public interface ProductAssembler {
 
     /**
      * 从单个 Product 实体转换为 ProductSummaryBO
+     *
+     * TODO：不保证编译错误，但是可用
      */
     @Mappings({
             @Mapping(source = "product.productId", target = "productId"),

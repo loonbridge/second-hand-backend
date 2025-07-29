@@ -5,6 +5,9 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.time.LocalDateTime;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
 import lombok.Data;
 
 /**
@@ -13,12 +16,16 @@ import lombok.Data;
  */
 @TableName(value ="review")
 @Data
+@Entity
 public class Review {
     /**
      * 评论ID (主键)
      */
     @TableId(value = "review_id", type = IdType.AUTO)
+    @Id
     private Long reviewId;
+
+
 
     /**
      * 评论内容

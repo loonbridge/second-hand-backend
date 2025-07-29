@@ -55,7 +55,6 @@ public class ProductController implements ProductsApi {
     @Override
     public ResponseEntity<ProductDetailVO> productsIdGet(String id) {
 
-        //TODO：后续要引入authorization
 
 //        获取当前用户ID
 

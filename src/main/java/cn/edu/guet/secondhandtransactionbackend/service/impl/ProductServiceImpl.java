@@ -1,18 +1,16 @@
 package cn.edu.guet.secondhandtransactionbackend.service.impl;
 
 import cn.edu.guet.secondhandtransactionbackend.assembler.ProductAssembler;
+import cn.edu.guet.secondhandtransactionbackend.assembler.UserAssembler;
 import cn.edu.guet.secondhandtransactionbackend.dto.product.CreateProductDTO;
 import cn.edu.guet.secondhandtransactionbackend.dto.product.ProductSummaryBO;
 import cn.edu.guet.secondhandtransactionbackend.dto.product.ProductDetailBO;
-import cn.edu.guet.secondhandtransactionbackend.entity.ProductImage;
-import cn.edu.guet.secondhandtransactionbackend.entity.UserProductFavoriteFnn;
-import cn.edu.guet.secondhandtransactionbackend.entity.UserUserFollowFnn;
+import cn.edu.guet.secondhandtransactionbackend.entity.*;
 import cn.edu.guet.secondhandtransactionbackend.service.*;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import cn.edu.guet.secondhandtransactionbackend.entity.Product;
 import cn.edu.guet.secondhandtransactionbackend.mapper.ProductMapper;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,12 +40,15 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product>
 
     private  final  ProductAssembler productAssembler;
 
+    private  final UserAssembler userAssembler;
+
     @Autowired
     public ProductServiceImpl(ProductMapper productMapper, ProductImageService productImageService,
                               UserService userService, ReviewService reviewService,
                               UserUserFollowFnnService userUserFollowFnnService,
                               UserProductFavoriteFnnService userProductFavoriteFnnService,
-                              ProductAssembler productAssembler) {
+                              ProductAssembler productAssembler
+    , UserAssembler userAssembler) {
         this.productMapper = productMapper;
         this.productImageService = productImageService;
         this.userService = userService;
@@ -55,6 +56,7 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product>
         this.userUserFollowFnnService = userUserFollowFnnService;
         this.userProductFavoriteFnnService = userProductFavoriteFnnService;
         this.productAssembler = productAssembler;
+        this.userAssembler = userAssembler;
     }
 
 
@@ -130,12 +132,15 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product>
 
        /*
        *
-        * TODO:需要实现 UserSummaryBO UserService.getUserInfoById(Long userId)方法
+        * TODO（已经实现）: UserProfileBO UserService.getUserInfoById(Long userId)
        * */
 //        target.setSellerInfo(userService.getUserInfoById(product.getUserId()));   ;
-//
-////        TODO：需要实现 ReviewBO   ReviewService.getReviewsByProductId(Long productId)方法
-//        target.setReviews(reviewService.getReviewsByProductId(productId));
+        User one = userService.getOne(new LambdaQueryWrapper<User>().eq(User::getUserId, product.getUserId()));
+
+
+        target.setSellerInfo(userAssembler.fromUser(one));
+////        TODO（已经实现）：需要实现 ReviewBO   ReviewService.getReviewsByProductId(Long productId)方法
+        target.setReviews(reviewService.getReviewsByProductId(productId));
 
 
         return target;

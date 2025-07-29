@@ -5,8 +5,10 @@ import cn.edu.guet.secondhandtransactionbackend.dto.WeChatPayParamsVO;
 import cn.edu.guet.secondhandtransactionbackend.dto.order.OrderListBO;
 import cn.edu.guet.secondhandtransactionbackend.dto.order.OrderSummaryBO;
 import cn.edu.guet.secondhandtransactionbackend.entity.Product;
+import cn.edu.guet.secondhandtransactionbackend.entity.ProductImage;
 import cn.edu.guet.secondhandtransactionbackend.service.ProductImageService;
 import cn.edu.guet.secondhandtransactionbackend.service.ProductService;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -82,10 +84,26 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order>
                 .collect(Collectors.toMap(Product::getProductId, product -> product));
 
         // 一次性查询所有商品的主图（假设有对应方法）
-        //TODO： 缺少获取主图方法。
+        //TODO： 缺少获取主图方法。（实现了，但是未认证。）
 //        Map<Long, String> mainImageMap = productImageService.listMainImagesByProductIds(productIds);
 
-        Map<Long,String> mainImageMap=null;
+
+
+        LambdaQueryWrapper<ProductImage> productImageLambdaQueryWrapper = new LambdaQueryWrapper<>();
+
+        productImageLambdaQueryWrapper.in(ProductImage::getProductId, productIds)
+                .eq(ProductImage::getDisplayOrder, 0); // 获取封面图片
+
+        List<ProductImage> productImages = productImageService.list(productImageLambdaQueryWrapper);
+
+
+        //转成和 List<Product>对应的List<string>
+
+        Map<Long, String> mainImageMap  = productImages.stream()
+                .collect(Collectors.toMap(ProductImage::getProductId, ProductImage::getImageUrl, (existing, replacement) -> existing));
+
+
+//        Map<Long,String> mainImageMap=null;
 
         // --- 3. 组装成最终的 BO (Business Object) 列表 ---
         List<OrderSummaryBO> orderSummaryBOS = orderRecords.stream().map(order -> {

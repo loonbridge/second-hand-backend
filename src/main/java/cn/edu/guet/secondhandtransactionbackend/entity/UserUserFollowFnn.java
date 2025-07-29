@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.time.LocalDateTime;
 import lombok.Data;
+import lombok.experimental.Accessors;
 
 /**
  * [行为]用户关注用户(n-n)关系表
@@ -13,6 +14,7 @@ import lombok.Data;
  */
 @TableName(value ="user_user_follow_fnn")
 @Data
+@Accessors(chain = true)
 public class UserUserFollowFnn {
     /**
      * 关注者ID (主键, 外键)

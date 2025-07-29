@@ -541,23 +541,6 @@ components:
           type: string
           description: "本次支付关联的系统内部订单ID，可用于支付成功后的页面跳转"
 
-    UserSummaryVO:
-      type: object
-      properties:
-        userId:
-          type: string
-          example: "user_abc"
-        nickname:
-          type: string
-          example: "Emily Chen"
-        avatarUrl:
-          type: string
-          format: uri
-          example: "https://example.com/avatar.jpg"
-        joinDate:
-          type: string
-          format: date
-          example: "2021-01-01"
 
     UserProfileVO:
       type: object
@@ -619,7 +602,7 @@ components:
           type: integer
           example: 1
         sellerInfo:
-          $ref: '#/components/schemas/UserSummaryVO'
+          $ref: '#/components/schemas/UserProfileVO'
         isFavorite:
           type: boolean
           description: "当前用户是否已收藏该商品"
@@ -694,7 +677,7 @@ components:
         reviewId:
           type: string
         author:
-          $ref: '#/components/schemas/UserSummaryVO'
+          $ref: '#/components/schemas/UserProfileVO'
         content:
           type: string
           example: "很棒的夹克！和描述的一模一样。"

@@ -8,8 +8,13 @@ import cn.edu.guet.secondhandtransactionbackend.dto.product.ProductListBO;
 import cn.edu.guet.secondhandtransactionbackend.dto.product.ProductSummaryBO;
 import cn.edu.guet.secondhandtransactionbackend.dto.user.UserProfileBO;
 import cn.edu.guet.secondhandtransactionbackend.dto.user.UserProfileDTO;
+import cn.edu.guet.secondhandtransactionbackend.entity.UserProductFavoriteFnn;
+import cn.edu.guet.secondhandtransactionbackend.entity.UserUserFollowFnn;
+import cn.edu.guet.secondhandtransactionbackend.service.UserProductFavoriteFnnService;
 import cn.edu.guet.secondhandtransactionbackend.service.UserService;
+import cn.edu.guet.secondhandtransactionbackend.service.UserUserFollowFnnService;
 import cn.edu.guet.secondhandtransactionbackend.util.AuthenticationHelper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,25 +34,72 @@ public class UserController  implements UsersApi {
 
     private final UserAssembler userAssembler;
 
+    private final UserProductFavoriteFnnService userProductFavoriteFnnService;
+
+    private  final UserUserFollowFnnService userUserFollowFnnService;
+
 
     @Autowired
-    public UserController(UserAssembler userAssembler,ProductAssembler productAssembler,AuthenticationHelper authenticationHelper,
+    public UserController(UserUserFollowFnnService userUserFollowFnnService, UserProductFavoriteFnnService userProductFavoriteFnnService, UserAssembler userAssembler, ProductAssembler productAssembler, AuthenticationHelper authenticationHelper,
                           UserService userService) {
         // 通过构造函数注入 AuthenticationHelper 和 UserService 实例
         this.authenticationHelper = authenticationHelper;
     this.productAssembler = productAssembler; // 这里可以注入 ProductAssembler 实例
         this.userService = userService; // 这里可以注入 UserService 实例
         this.userAssembler = userAssembler; // 这里可以注入 UserAssembler 实例
+        this.userProductFavoriteFnnService = userProductFavoriteFnnService; // 这里可以注入 UserProductFavoriteFnnService 实例
+        this.userUserFollowFnnService = userUserFollowFnnService; // 这里可以注入 UserUserFollowFnnService 实例
     }
 
+
+
+    /*
+     *
+     * 当前用户取消关注特定用户*/
     @Override
     public ResponseEntity<Void> usersIdFollowDelete(String id) {
-        return null;
+
+        //获取当前ID
+        Optional<Long> currentUserId = authenticationHelper.getCurrentUserId();
+        if (currentUserId.isEmpty()) {
+            //如果没有认证用户，返回未授权
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+
+        }
+        //如果有认证用户，获取用户ID
+        Long currentId = currentUserId.get();
+
+        //调用用户服务取消关注用户
+
+        boolean remove = userUserFollowFnnService.remove(new LambdaQueryWrapper<UserUserFollowFnn>()
+                .eq(UserUserFollowFnn::getFollowerUserId, currentId)
+                .eq(UserUserFollowFnn::getFollowingUserId, Long.valueOf(id))
+        );
+        return ResponseEntity.status(remove ? HttpStatus.NO_CONTENT : HttpStatus.NOT_FOUND).build();
     }
 
+
+    /*当前用户，
+     * 关注特定用户*/
     @Override
     public ResponseEntity<Void> usersIdFollowPost(String id) {
-        return null;
+
+        //获取当前ID
+        Optional<Long> currentUserId = authenticationHelper.getCurrentUserId();
+        if (currentUserId.isEmpty()) {
+            //如果没有认证用户，返回未授权
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        //如果有认证用户，获取用户ID
+        Long currentId = currentUserId.get();
+        //调用用户服务关注用户
+        boolean save = userUserFollowFnnService.save(new UserUserFollowFnn()
+                .setFollowerUserId(currentId)
+                .setFollowingUserId(Long.valueOf(id))
+        );
+
+        return ResponseEntity.status(save ? HttpStatus.CREATED : HttpStatus.BAD_REQUEST).build();
     }
 
     /*
@@ -78,12 +130,39 @@ public class UserController  implements UsersApi {
 
     @Override
     public ResponseEntity<Void> usersMeFavoritesPost(AddFavoriteRequest addFavoriteRequest) {
-        return null;
+
+        Optional<Long> currentUserId = authenticationHelper.getCurrentUserId();
+
+        if (currentUserId.isEmpty()) {
+            //如果没有认证用户，返回未授权
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        //如果有认证用户，获取用户ID
+
+       boolean result= userProductFavoriteFnnService.addUserProductFavorite(
+                currentUserId.get(),
+                Long.valueOf(addFavoriteRequest.getProductId())
+        );
+
+
+        return ResponseEntity.status(result ? HttpStatus.CREATED : HttpStatus.BAD_REQUEST).build();
     }
 
+
+
+    /*删除收藏的商品*/
     @Override
     public ResponseEntity<Void> usersMeFavoritesProductIdDelete(String productId) {
-        return null;
+
+        LambdaQueryWrapper<UserProductFavoriteFnn> userProductFavoriteFnnLambdaQueryWrapper = new LambdaQueryWrapper<>();
+
+        userProductFavoriteFnnLambdaQueryWrapper.eq(UserProductFavoriteFnn::getProductId,
+                Long.valueOf(productId));
+
+        boolean remove = userProductFavoriteFnnService.remove(userProductFavoriteFnnLambdaQueryWrapper);
+
+        return ResponseEntity.status(remove ? HttpStatus.NO_CONTENT : HttpStatus.NOT_FOUND).build();
     }
 
     @Override

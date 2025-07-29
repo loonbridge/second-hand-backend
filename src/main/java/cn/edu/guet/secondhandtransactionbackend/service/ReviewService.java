@@ -1,7 +1,10 @@
 package cn.edu.guet.secondhandtransactionbackend.service;
 
+import cn.edu.guet.secondhandtransactionbackend.dto.review.ReviewBO;
 import cn.edu.guet.secondhandtransactionbackend.entity.Review;
 import com.baomidou.mybatisplus.extension.service.IService;
+
+import java.util.List;
 
 /**
 * @author Sammy
@@ -10,4 +13,5 @@ import com.baomidou.mybatisplus.extension.service.IService;
 */
 public interface ReviewService extends IService<Review> {
 
+    List<ReviewBO> getReviewsByProductId(Long productId);
 }

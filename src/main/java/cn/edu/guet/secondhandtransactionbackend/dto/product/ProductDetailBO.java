@@ -26,10 +26,6 @@ public class ProductDetailBO {
 
     private LocalDateTime CreatedAt;
 
-    /*
-    *TODO：是需要实现UserSummaryBO类。
-    * */
-
     private UserProfileBO sellerInfo;
 
     private List<String> imageUrls; // 商品图片列表

@@ -2,6 +2,7 @@ package cn.edu.guet.secondhandtransactionbackend.service;
 
 import cn.edu.guet.secondhandtransactionbackend.entity.UserProductFavoriteFnn;
 import com.baomidou.mybatisplus.extension.service.IService;
+import jakarta.validation.constraints.NotNull;
 
 /**
 * @author Sammy
@@ -10,4 +11,5 @@ import com.baomidou.mybatisplus.extension.service.IService;
 */
 public interface UserProductFavoriteFnnService extends IService<UserProductFavoriteFnn> {
 
+    boolean addUserProductFavorite(@NotNull Long currentUserId, @NotNull Long productId);
 }
