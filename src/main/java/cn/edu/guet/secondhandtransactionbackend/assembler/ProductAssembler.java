@@ -8,12 +8,17 @@ import cn.edu.guet.secondhandtransactionbackend.dto.product.CreateProductDTO;
 import cn.edu.guet.secondhandtransactionbackend.dto.product.ProductSummaryBO;
 import cn.edu.guet.secondhandtransactionbackend.dto.product.ProductDetailBO;
 import cn.edu.guet.secondhandtransactionbackend.entity.Product;
+import cn.edu.guet.secondhandtransactionbackend.util.CommonMappingUtils;
 import org.mapstruct.*;
 
+import java.net.URI;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Mapper(componentModel = "spring" , uses = {UserAssembler.class, ReviewAssembler.class}
+@Mapper(componentModel = "spring" , uses = {UserAssembler.class, CommonMappingUtils.class,ReviewAssembler.class}
 ,
 //忽略未映射的目标属性
 
@@ -22,12 +27,14 @@ public interface ProductAssembler {
 
     // --- Mappings for ProductSummary ---
 
+
+
     /**
      * Converts a single ProductSummaryBO to a ProductSummaryVO.
      */
     @Mappings({
             @Mapping(target = "price", source = "price"), // BigDecimal -> Float
-            @Mapping(target = "mainImageUrl", source = "mainImageUrl") // String -> URI
+            @Mapping(target = "mainImageUrl", source = "mainImageUrl",qualifiedByName = "toUri") // String -> URI
     })
     ProductSummaryVO toSummaryVO(ProductSummaryBO product);
 
@@ -57,9 +64,7 @@ public interface ProductAssembler {
                 .totalElements(totalElements);
     }
 
-
-
-    // --- Mappings for ProductDetail ---
+// --- Mappings for ProductDetail ---
 
     /**
      * Converts ProductDetailBO to ProductDetailVO.
@@ -73,7 +78,7 @@ public interface ProductAssembler {
             // Nested list mapping for reviews will be handled by ReviewAssembler
             @Mapping(source = "reviews", target = "reviews"),
             // imageUris are handled by the String -> URI mapping below
-            @Mapping(source = "imageUrls", target = "imageUrls")
+            @Mapping(source = "imageUrls", target = "imageUrls",qualifiedByName = "toUri"),
     })
     ProductDetailVO toProductDetailVO(ProductDetailBO productDetailBO);
 
@@ -87,7 +92,7 @@ public interface ProductAssembler {
     @Mappings({
             @Mapping(target = "price", source = "price"), // Float -> BigDecimal
             @Mapping(target = "categoryId", source = "categoryId"), // String -> Long (需要自定义转换)
-            @Mapping(target = "imageUrls", source = "imageUrls") // List<URI> -> List<String>
+            @Mapping(target = "imageUrls", source = "imageUrls",qualifiedByName = "fromUri") // List<URI> -> List<String>
     })
     CreateProductDTO toCreateProductDTO(CreateProductRequest createProductRequest);
 
