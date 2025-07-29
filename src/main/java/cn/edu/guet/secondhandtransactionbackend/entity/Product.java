@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import lombok.Data;
+import lombok.experimental.Accessors;
 
 /**
  * 商品实体表
@@ -14,6 +15,7 @@ import lombok.Data;
  */
 @TableName(value ="product")
 @Data
+@Accessors(chain = true)
 public class Product {
     /**
      * 商品ID (主键)

@@ -1,7 +1,12 @@
 package cn.edu.guet.secondhandtransactionbackend.service;
 
+import cn.edu.guet.secondhandtransactionbackend.dto.CreateOrderRequest;
+import cn.edu.guet.secondhandtransactionbackend.dto.WeChatPayParamsVO;
+import cn.edu.guet.secondhandtransactionbackend.dto.order.OrderListBO;
 import cn.edu.guet.secondhandtransactionbackend.entity.Order;
 import com.baomidou.mybatisplus.extension.service.IService;
+
+import java.util.Optional;
 
 /**
 * @author Sammy
@@ -10,4 +15,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 */
 public interface OrderService extends IService<Order> {
 
+    OrderListBO getOrders(String status, Integer page, Integer size, Long currentUserId);
+
+    WeChatPayParamsVO createOrder(CreateOrderRequest createOrderRequest);
 }

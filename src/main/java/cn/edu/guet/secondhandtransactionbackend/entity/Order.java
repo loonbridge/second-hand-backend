@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 import lombok.Data;
 
 /**
- * 订单实体表
+ * 订单表 - 已为单商品购买场景优化
  * @TableName order
  */
 @TableName(value ="order")
@@ -22,7 +22,7 @@ public class Order {
     private Long orderId;
 
     /**
-     * 订单号
+     * 唯一的订单号
      */
     @TableField(value = "order_number")
     private String orderNumber;
@@ -34,16 +34,34 @@ public class Order {
     private String status;
 
     /**
-     * 订单总价
+     * 下单时单价快照
+     */
+    @TableField(value = "price_at_purchase")
+    private BigDecimal priceAtPurchase;
+
+    /**
+     * 购买数量
+     */
+    @TableField(value = "quantity")
+    private Integer quantity;
+
+    /**
+     * 订单总金额 (price_at_purchase * quantity)
      */
     @TableField(value = "total_price")
     private BigDecimal totalPrice;
 
     /**
-     * 买家用户ID (外键)
+     * 买家用户ID (外键, 关联user表)
      */
     @TableField(value = "user_id")
     private Long userId;
+
+    /**
+     * 购买的商品ID (外键, 关联product表)
+     */
+    @TableField(value = "product_id")
+    private Long productId;
 
     /**
      * 创建时间

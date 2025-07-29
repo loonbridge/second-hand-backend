@@ -1,6 +1,7 @@
 package cn.edu.guet.secondhandtransactionbackend.dto.product;
 
-import cn.edu.guet.secondhandtransactionbackend.entity.Product;
+import cn.edu.guet.secondhandtransactionbackend.dto.review.ReviewBO;
+import cn.edu.guet.secondhandtransactionbackend.dto.user.UserProfileBO;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
@@ -12,7 +13,7 @@ import java.util.List;
 //集成Product实体类的属性，product的属性都要返回
 //需要的实体有，product，user,review
 @Accessors(chain = true)
-public class productDetailBO  {
+public class ProductDetailBO {
     private Long productId;
     private String title;
     private String description;
@@ -29,7 +30,7 @@ public class productDetailBO  {
     *TODO：是需要实现UserSummaryBO类。
     * */
 
-    private  UserSummaryBO sellerInfo;
+    private UserProfileBO sellerInfo;
 
     private List<String> imageUrls; // 商品图片列表
 

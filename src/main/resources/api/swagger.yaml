@@ -651,41 +651,42 @@ components:
 
     OrderSummaryVO:
       type: object
+      description: "订单摘要信息。由于业务规则为一次只购买一件商品，该结构已扁平化，直接包含商品信息。"
       properties:
         orderId:
           type: string
+          description: "系统内部的订单ID"
           example: "order_789"
         status:
           type: string
-          example: "待付款"
+          description: "订单状态"
+          example: "ToShip"
         totalPrice:
           type: number
           format: float
-          example: 128.00
-        productCount:
-          type: integer
-          example: 2
-        orderItems:
-          type: array
-          items:
-            $ref: '#/components/schemas/OrderItemVO'
-
-    OrderItemVO:
-      type: object
-      properties:
+          description: "订单总金额，等于 priceAtPurchase * quantity"
+          example: 150.00
         productId:
           type: string
-        title:
+          description: "所购买的商品ID"
+          example: "prod_456"
+        productTitle:
           type: string
-          example: "复古风格纯棉格子衬衫"
-        mainImageUrl:
+          description: "所购买的商品标题"
+          example: "复古牛仔夹克"
+        productMainImageUrl:
           type: string
           format: uri
-        price:
+          description: "所购买的商品主图"
+        priceAtPurchase:
           type: number
           format: float
+          description: "下单时商品的单价快照"
+          example: 150.00
         quantity:
           type: integer
+          description: "购买数量"
+          example: 1
 
     ReviewVO:
       type: object

@@ -1,76 +1,126 @@
 package cn.edu.guet.secondhandtransactionbackend.assembler;
 
+import cn.edu.guet.secondhandtransactionbackend.dto.CreateProductRequest;
 import cn.edu.guet.secondhandtransactionbackend.dto.ProductDetailVO;
 import cn.edu.guet.secondhandtransactionbackend.dto.ProductListVO;
 import cn.edu.guet.secondhandtransactionbackend.dto.ProductSummaryVO;
+import cn.edu.guet.secondhandtransactionbackend.dto.product.CreateProductDTO;
 import cn.edu.guet.secondhandtransactionbackend.dto.product.ProductSummaryBO;
-import cn.edu.guet.secondhandtransactionbackend.dto.product.productDetailBO;
+import cn.edu.guet.secondhandtransactionbackend.dto.product.ProductDetailBO;
 import cn.edu.guet.secondhandtransactionbackend.entity.Product;
-import lombok.SneakyThrows;
+import org.mapstruct.*;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.List;
+import java.util.stream.Collectors;
 
-public class ProductAssembler {
+@Mapper(componentModel = "spring" , uses = {UserAssembler.class, ReviewAssembler.class}
+,
+//忽略未映射的目标属性
+
+unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public interface ProductAssembler {
+
+    // --- Mappings for ProductSummary ---
+
+    /**
+     * Converts a single ProductSummaryBO to a ProductSummaryVO.
+     */
+    @Mappings({
+            @Mapping(target = "price", source = "price"), // BigDecimal -> Float
+            @Mapping(target = "mainImageUrl", source = "mainImageUrl") // String -> URI
+    })
+    ProductSummaryVO toSummaryVO(ProductSummaryBO product);
+
+    /**
+     * MapStruct automatically creates a list-mapping method.
+     */
+    List<ProductSummaryVO> toSummaryVOList(List<ProductSummaryBO> products);
+
+    // --- Custom Logic with Default Method ---
 
 
-    private ProductAssembler() {
-        // 私有构造函数，防止实例化
-    }
+    /**
+     * Replaces your static `toProductListVO` method.
+     */
+    default ProductListVO toProductListVO(List<ProductSummaryBO> products, Integer size) {
+        if (products == null || size == null || size <= 0) {
+            return new ProductListVO().items(List.of()).totalPages(0).totalElements(0);
+        }
 
-    //lombok处理受检异常
-    @SneakyThrows
-    public static ProductSummaryVO toSummaryVO(ProductSummaryBO product)  {
+        List<ProductSummaryVO> items = this.toSummaryVOList(products);
+        int totalElements = items.size();
+        int totalPages = (totalElements + size - 1) / size;
 
-      return   new ProductSummaryVO()
-                .productId(product.getProductId().toString())
-                .title(product.getTitle())
-                .mainImageUrl( new URI(product.getMainImageUrl()))
-                .price(product.getPrice().floatValue());
-
-
-    }
-
-    @SneakyThrows
-    public static List<ProductSummaryVO> toSummaryVOList(List<ProductSummaryBO> products)  {
-        return products.stream()
-                .map(ProductAssembler::toSummaryVO)
-                .toList();
-    }
-
-
-//    根据上层传入的每页数量来计算页数，向上取整
-    public  static ProductListVO toProductListVO(List<ProductSummaryVO> products,Integer size) {
         return new ProductListVO()
-                .items(products)
-                .totalPages(products.size() / size + (products.size() % size == 0 ? 0 : 1))
-                .totalElements(products.size());
-    }
-@SneakyThrows
-    public static ProductDetailVO toProductDetailVO(productDetailBO productDetailBO) {
-
-        return new ProductDetailVO()
-                .productId(productDetailBO.getProductId().toString())
-                .title(productDetailBO.getTitle())
-                .description(productDetailBO.getDescription())
-                .price(productDetailBO.getPrice().floatValue())
-                .imageUrls(productDetailBO.getImageUrls()!=null ? productDetailBO.getImageUrls().stream()
-                        .map(URI::new).toList() : null)
-
-                .stock(productDetailBO.getStock())
-//                TODO：需要实现toUserSummary的转换器。
-                .sellerInfo(productDetailBO.getSellerInfo() != null ? productDetailBO.getSellerInfo().toUserSummaryVO() : null)
-                .isFavorite(productDetailBO.getIsFavorite())
-                .isFollowingSeller(productDetailBO.getIsFollowingSeller())
-                .postedAt(productDetailBO.getCreatedAt())
-//                TODO：需要实现ReviewVO的转换器。
-                .reviews(productDetailBO.getReviews() != null ? productDetailBO.getReviews().stream().map(review -> review.toReviewVO()).toList() : null);
-
-
-
+                .items(items)
+                .totalPages(totalPages)
+                .totalElements(totalElements);
     }
 
 
+
+    // --- Mappings for ProductDetail ---
+
+    /**
+     * Converts ProductDetailBO to ProductDetailVO.
+     * Replaces your static `toProductDetailVO` method.
+     */
+    @Mappings({
+            // Fix for type mismatch: BO.createdAt -> VO.postedAt
+            @Mapping(source = "createdAt", target = "postedAt"),
+            // Nested object mapping for sellerInfo will be handled by UserAssembler
+            @Mapping(source = "sellerInfo", target = "sellerInfo"),
+            // Nested list mapping for reviews will be handled by ReviewAssembler
+            @Mapping(source = "reviews", target = "reviews"),
+            // imageUris are handled by the String -> URI mapping below
+            @Mapping(source = "imageUrls", target = "imageUrls")
+    })
+    ProductDetailVO toProductDetailVO(ProductDetailBO productDetailBO);
+
+
+    // --- Mappings for CreateProduct ---
+
+    /**
+     * Converts CreateProductRequest to CreateProductDTO.
+     * 处理类型转换和字段映射
+     */
+    @Mappings({
+            @Mapping(target = "price", source = "price"), // Float -> BigDecimal
+            @Mapping(target = "categoryId", source = "categoryId"), // String -> Long (需要自定义转换)
+            @Mapping(target = "imageUrls", source = "imageUrls") // List<URI> -> List<String>
+    })
+    CreateProductDTO toCreateProductDTO(CreateProductRequest createProductRequest);
+
+
+    /**
+     * 提供一个需要 mainImageUrl 列表的重载方法
+     */
+    default List<ProductSummaryBO> fromProductsInLine(List<Product> products, List<String> mainImageUrls) {
+        if (products == null || mainImageUrls == null) {
+            return null;
+        }
+        if (products.size() != mainImageUrls.size()) {
+            throw new IllegalArgumentException("Products 和 mainImageUrls 的数量必须一致");
+        }
+
+        return products.stream()
+                .map(product -> {
+                    int index = products.indexOf(product);
+                    String mainImageUrl = index < mainImageUrls.size() ? mainImageUrls.get(index) : null;
+                    return fromProduct(product, mainImageUrl);
+                })
+                .collect(Collectors.toList());
+    }
+
+
+    /**
+     * 从单个 Product 实体转换为 ProductSummaryBO
+     */
+    @Mappings({
+            @Mapping(source = "product.productId", target = "productId"),
+            @Mapping(source = "product.title", target = "title"),
+            @Mapping(source = "product.price", target = "price"),
+            @Mapping(source = "mainImageUrl", target = "mainImageUrl")
+    })
+    ProductSummaryBO fromProduct(Product product, String mainImageUrl);
 }

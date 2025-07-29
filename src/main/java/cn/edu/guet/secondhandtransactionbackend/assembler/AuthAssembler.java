@@ -2,33 +2,19 @@ package cn.edu.guet.secondhandtransactionbackend.assembler;
 
 import cn.edu.guet.secondhandtransactionbackend.dto.LoginResponseVO;
 import cn.edu.guet.secondhandtransactionbackend.dto.auth.LoginResponseBO;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Mappings;
 
-public class AuthAssembler {
-
-
-    private AuthAssembler() {
-        // Private constructor to prevent instantiation
-    }
-
-    /**
-     * Converts a login response object to a string representation.
-     *
-     * @param loginResponse the login response object
-     * @return a string representation of the login response
-     */
+@Mapper(componentModel = "spring" ,uses = {UserAssembler.class})
+// 使用 UserAssembler 作为依赖，确保 UserProfile 的映射正确
+public interface AuthAssembler {
 
 
-    public  static LoginResponseVO toLoginResponseVO(LoginResponseBO loginResponse) {
-        if (loginResponse == null) {
-            return null;
-        }
+    @Mappings({
+            @Mapping(source = "jwt", target = "token"),
+            @Mapping(source = "userProfile", target = "user")
+    })
+    LoginResponseVO toLoginResponseVO(LoginResponseBO loginResponse);
 
-        LoginResponseVO responseVO = new LoginResponseVO()
-                .token(loginResponse.getJwt())
-
-                //TODO：增加User传输对象DTO的转换器
-                .user(UserAssembler.toUserProfileVO(loginResponse.getUserProfile()));
-
-        return responseVO;
-    }
 }

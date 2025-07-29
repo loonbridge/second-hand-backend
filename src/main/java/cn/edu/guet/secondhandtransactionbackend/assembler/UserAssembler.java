@@ -1,25 +1,27 @@
 package cn.edu.guet.secondhandtransactionbackend.assembler;
 
+import cn.edu.guet.secondhandtransactionbackend.dto.UpdateUserRequest;
 import cn.edu.guet.secondhandtransactionbackend.dto.UserProfileVO;
 import cn.edu.guet.secondhandtransactionbackend.dto.user.UserProfileBO;
+import cn.edu.guet.secondhandtransactionbackend.dto.user.UserProfileDTO;
 import lombok.SneakyThrows;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Mappings;
 
 import java.net.URI;
 
-public class UserAssembler {
+@Mapper(componentModel = "spring")
+public interface UserAssembler {
 
     @SneakyThrows
-    public static UserProfileVO toUserProfileVO(UserProfileBO userProfile) {
+      UserProfileVO toUserProfileVO(UserProfileBO userProfile);
 
-        if (userProfile == null) {
-            return null;
-        }
 
-        return new UserProfileVO()
-                .userId(userProfile.getUserId().toString())
-                .nickname(userProfile.getNickname())
-                .avatarUrl(userProfile.getAvatarUrl() != null ? new URI(userProfile.getAvatarUrl())  : null)
-                .joinDate(userProfile.getCreatedAt() != null ? userProfile.getCreatedAt().toLocalDate() : null);
-    }
+
+
+      UserProfileDTO toUserProfileDTO(UpdateUserRequest updateUserRequest);
+
+
 
 }

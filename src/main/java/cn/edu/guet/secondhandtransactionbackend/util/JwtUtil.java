@@ -85,10 +85,10 @@ public class JwtUtil {
      * @return 用户ID (Long)
      * @throws JWTVerificationException 如果Token无效或无法解析出用户ID
      */
-    public  Long getUserIdFromToken(String token) throws JWTVerificationException {
+    public  String getUserIdFromToken(String token) throws JWTVerificationException {
         DecodedJWT decodedJWT = verifyToken(token);
         // 从自定义claim中获取userId，更可靠
-        return decodedJWT.getClaim("userId").asLong();
+        return decodedJWT.getClaim("userId").toString();
     }
 
 

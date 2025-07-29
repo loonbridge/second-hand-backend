@@ -17,13 +17,13 @@ public class UserUserFollowFnn {
     /**
      * 关注者ID (主键, 外键)
      */
-    @TableId(value = "follower_user_id")
+    @TableField(value = "follower_user_id")
     private Long followerUserId;
 
     /**
      * 被关注者ID (主键, 外键)
      */
-    @TableId(value = "following_user_id")
+    @TableField(value = "following_user_id")
     private Long followingUserId;
 
     /**

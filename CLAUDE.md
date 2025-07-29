@@ -44,15 +44,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - **运行所有测试**:
   ```shell
-  ./mvnw test
+  ./mvnw 分析.json
   ```
 
 - **运行单个测试类或方法**:
   ```shell
   # 运行单个测试类
-  ./mvnw test -Dtest="YourTestClassName"
+  ./mvnw 分析.json -Dtest="YourTestClassName"
   # 运行单个测试方法
-  ./mvnw test -Dtest="YourTestClassName#yourTestMethodName"
+  ./mvnw 分析.json -Dtest="YourTestClassName#yourTestMethodName"
   ```
 
 ## 关键开发流程

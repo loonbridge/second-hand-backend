@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
+import lombok.experimental.Accessors;
 
 /**
  * 商品图片实体表 (1对多关系)
@@ -12,6 +13,7 @@ import lombok.Data;
  */
 @TableName(value ="product_image")
 @Data
+@Accessors(chain = true)
 public class ProductImage {
     /**
      * 图片ID (主键)

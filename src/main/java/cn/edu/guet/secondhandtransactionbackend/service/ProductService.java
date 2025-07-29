@@ -1,7 +1,8 @@
 package cn.edu.guet.secondhandtransactionbackend.service;
 
+import cn.edu.guet.secondhandtransactionbackend.dto.product.CreateProductDTO;
 import cn.edu.guet.secondhandtransactionbackend.dto.product.ProductSummaryBO;
-import cn.edu.guet.secondhandtransactionbackend.dto.product.productDetailBO;
+import cn.edu.guet.secondhandtransactionbackend.dto.product.ProductDetailBO;
 import cn.edu.guet.secondhandtransactionbackend.entity.Product;
 import com.baomidou.mybatisplus.extension.service.IService;
 
@@ -17,5 +18,9 @@ public interface ProductService extends IService<Product> {
     List<ProductSummaryBO> getProducts(String query, String categoryId, String sellerId, Integer page, Integer size);
 
 
-    productDetailBO getProductDetailById(Long productId, Long currentUserId);
+    ProductDetailBO getProductDetailById(Long productId, Long currentUserId);
+
+    ProductDetailBO createProduct(CreateProductDTO createProductDTO,Long currentUserId);
+
+    List<ProductSummaryBO> getFavoriteProductsByUserId(Long userId, Integer page, Integer size);
 }

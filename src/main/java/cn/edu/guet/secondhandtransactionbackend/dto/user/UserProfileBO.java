@@ -11,7 +11,6 @@ public class UserProfileBO {
 
     private Long userId;
 
-    private String openid;
     private String nickname;
     private String avatarUrl;
     private LocalDateTime createdAt;

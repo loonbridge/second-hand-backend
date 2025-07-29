@@ -17,13 +17,13 @@ public class UserProductFavoriteFnn {
     /**
      * 用户ID (主键, 外键)
      */
-    @TableId(value = "user_id")
+    @TableField(value = "user_id")
     private Long userId;
 
     /**
      * 商品ID (主键, 外键)
      */
-    @TableId(value = "product_id")
+    @TableField(value = "product_id")
     private Long productId;
 
     /**
