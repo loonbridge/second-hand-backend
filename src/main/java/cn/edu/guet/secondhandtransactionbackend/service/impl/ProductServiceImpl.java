@@ -16,6 +16,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -126,7 +127,7 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product>
         //当前用户是否关注过卖家
         target.setIsFollowingSeller(userUserFollowFnnService.exists(
                 new QueryWrapper<UserUserFollowFnn>()
-                        .eq("follower_id", currentUserId)
+                        .eq("follower_user_id", currentUserId)
                         .eq("following_user_id", product.getUserId())
         ));
 
@@ -150,35 +151,27 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product>
     public ProductDetailBO createProduct(CreateProductDTO createProductDTO,Long currentUserId) {
 
         // 创建Product实体
-
-
         Product product = new Product();
-
-
         BeanUtils.copyProperties(createProductDTO, product);
 
-
-
-
         //创建和用户的关联
-
         product.setUserId(currentUserId);
-
-
-
+        
+        // 设置商品状态为在售
+        product.setStatus("ON_SALE");
+        
+        // 使用当前时间，不再使用固定日期
+        LocalDateTime now = LocalDateTime.now();
+        product.setCreatedAt(now);
+        product.setUpdatedAt(now);
 
         //保存Product实体到数据库
-
         productMapper.insert(product);
 
-
-
         //创建和image实体的关联
-
         ArrayList<ProductImage> productImages = new ArrayList<>();
-
         List<String> imageUrls = createProductDTO.getImageUrls();
-
+        
         productImages.addAll(IntStream.range(0, imageUrls.size())
                 .mapToObj(i -> {
                     ProductImage productImage = new ProductImage();
@@ -189,14 +182,9 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product>
                 })
                 .toList());
 
-
         productImageService.saveBatch(productImages); // 批量保存ProductImage实体
 
-
-
-
         //创建和category的关联
-
         product.setCategoryId(createProductDTO.getCategoryId());
 
         // 不需要再查一次，productId 已自动回填
