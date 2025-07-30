@@ -1,0 +1,24 @@
+# 忽略 Maven/Gradle 的构建文件
+**/pom.xml
+build.gradle
+settings.gradle
+
+
+# 忽略 IDE 和 Git 相关文件
+.gitignore
+.travis.yml
+**/.openapi-generator-ignore
+
+# 忽略文档
+**/README.md
+
+# 忽略主启动类和配置
+src/main/java/org/openapitools/OpenApiGeneratorApplication.java
+src/main/resources/application.properties
+
+# 您也可以用通配符
+**/.mvn/**
+**/mvnw
+**/mvnw.cmd
+
+**/.openapi-generator/**

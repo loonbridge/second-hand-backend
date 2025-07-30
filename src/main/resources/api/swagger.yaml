@@ -1,8 +1,8 @@
 openapi: 3.0.3
 info:
-  title: "二手优选小程序 API V1.1"
-  description: "这是一个为“二手优选”微信小程序设计的后端API文档，涵盖了用户、商品、订单、消息等核心模块。V1.1修复了与UI不匹配的问题并增加了缺失的接口，本版本为完整版。"
-  version: "1.1.0"
+  title: "二手优选小程序 API V1.2"
+  description: "这是一个为“二手优选”微信小程序设计的后端API文档，涵盖了用户、商品、订单、消息等核心模块。V1.2版本对所有请求和响应进行了Schema封装（Request/VO后缀），并根据小程序支付流程优化了订单接口，结构更清晰，对接更友好。"
+  version: "1.2.0"
 servers:
   - url: https://api.example.com/v1
     description: 生产环境服务器
@@ -17,7 +17,7 @@ tags:
   - name: Users
     description: 用户个人中心相关操作
   - name: Orders
-    description: 订单管理
+    description: 订单管理与支付
   - name: Notifications
     description: 消息中心
   - name: Files
@@ -32,32 +32,20 @@ paths:
       tags:
         - Auth
       summary: "微信小程序登录"
-      description: "前端调用wx.login()获取code，发送给后端换取自定义登录态（如JWT Token）。"
+      description: "前端调用wx.login()获取code，发送给后端换取自定义登录态（JWT Token）。"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                code:
-                  type: string
-                  description: "微信登录凭证 code"
-                  example: "0a3j4H1..."
+              $ref: '#/components/schemas/LoginRequest'
       responses:
         "200":
           description: "登录成功"
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  token:
-                    type: string
-                    description: "JWT Token，后续请求需在Header中携带"
-                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                  user:
-                    $ref: '#/components/schemas/UserProfileVO'
+                $ref: '#/components/schemas/LoginResponseVO'
 
   # ======================================================
   # Products - 商品模块
@@ -67,7 +55,7 @@ paths:
       tags:
         - Products
       summary: "获取商品列表（首页/搜索/我的发布）"
-      description: "通用商品列表接口。可通过关键词、分类、卖家ID进行筛选。"
+      description: "通用商品列表接口。可通过关键词、分类、卖家ID进行筛选和分页。"
       parameters:
         - name: query
           in: query
@@ -79,7 +67,6 @@ paths:
           description: "分类ID"
           schema:
             type: string
-        ## [CHANGE] 新增 sellerId 参数，用于“我的发布”功能
         - name: sellerId
           in: query
           description: "卖家ID。传入 'me' 可查询当前登录用户的商品。"
@@ -99,20 +86,11 @@ paths:
             default: 10
       responses:
         "200":
-          description: "成功返回商品列表"
+          description: "成功返回商品分页列表"
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  items:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/ProductSummaryVO'
-                  totalPages:
-                    type: integer
-                  totalElements:
-                    type: integer
+                $ref: '#/components/schemas/ProductListVO'
     post:
       tags:
         - Products
@@ -124,7 +102,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateProductDTO'
+              $ref: '#/components/schemas/CreateProductRequest'
       responses:
         "201":
           description: "商品创建成功"
@@ -171,9 +149,12 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/CategoryVO'
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CategoryVO'
 
   # ======================================================
   # Users - 用户模块
@@ -192,7 +173,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserProfileVO'
-    ## [NEW] 新增 PATCH 方法用于更新用户信息 (对应设置页)
     patch:
       tags:
         - Users
@@ -205,7 +185,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateUserDTO'
+              $ref: '#/components/schemas/UpdateUserRequest'
       responses:
         "200":
           description: "更新成功"
@@ -216,7 +196,6 @@ paths:
         "400":
           description: "请求数据无效"
 
-  ## [NEW] 新增接口，获取用户的收藏列表 (对应“我的收藏”页面)
   /users/me/favorites:
     get:
       tags:
@@ -227,11 +206,13 @@ paths:
       parameters:
         - name: page
           in: query
+          description: "页码，从1开始"
           schema:
             type: integer
             default: 1
         - name: size
           in: query
+          description: "每页数量"
           schema:
             type: integer
             default: 10
@@ -241,9 +222,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ProductSummaryVO'
+                $ref: '#/components/schemas/ProductListVO' # 复用商品列表分页结构
     post:
       tags:
         - Users
@@ -255,11 +234,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                productId:
-                  type: string
-                  description: "要收藏的商品ID"
+              $ref: '#/components/schemas/AddFavoriteRequest'
       responses:
         "204":
           description: "收藏成功，无返回内容"
@@ -282,7 +257,6 @@ paths:
         "204":
           description: "取消收藏成功，无返回内容"
 
-  ## [NEW] 新增接口，用于关注/取关用户
   /users/{id}/follow:
     post:
       tags:
@@ -334,19 +308,30 @@ paths:
           schema:
             type: string
             enum: [ToPay, ToShip, ToReceive, Completed, Canceled]
+        - name: page
+          in: query
+          description: "页码，从1开始"
+          schema:
+            type: integer
+            default: 1
+        - name: size
+          in: query
+          description: "每页数量"
+          schema:
+            type: integer
+            default: 10
       responses:
         "200":
-          description: "成功返回订单列表"
+          description: "成功返回订单分页列表"
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/OrderSummaryVO'
+                $ref: '#/components/schemas/OrderListVO'
     post:
       tags:
         - Orders
-      summary: "创建订单（立即购买）"
+      summary: "创建订单并获取微信支付参数"
+      description: "此接口用于“立即购买”。后端在创建内部订单后，会向微信支付服务器请求预支付交易，并将返回的支付参数直接透传给小程序，小程序前端接收后调用wx.requestPayment()拉起支付。支付结果通过微信的异步通知更新。"
       security:
         - BearerAuth: []
       requestBody:
@@ -354,19 +339,16 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                productId:
-                  type: string
-                quantity:
-                  type: integer
+              $ref: '#/components/schemas/CreateOrderRequest'
       responses:
         "201":
-          description: "订单创建成功"
+          description: "订单创建成功，返回支付所需参数"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OrderSummaryVO'
+                $ref: '#/components/schemas/WeChatPayParamsVO'
+        "400":
+          description: "请求参数错误或商品库存不足"
 
   # ======================================================
   # Notifications - 消息模块
@@ -385,15 +367,25 @@ paths:
           schema:
             type: string
             enum: [system, transaction]
+        - name: page
+          in: query
+          description: "页码，从1开始"
+          schema:
+            type: integer
+            default: 1
+        - name: size
+          in: query
+          description: "每页数量"
+          schema:
+            type: integer
+            default: 10
       responses:
         "200":
-          description: "成功"
+          description: "成功返回消息分页列表"
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/NotificationVO'
+                $ref: '#/components/schemas/NotificationListVO'
 
   # ======================================================
   # Files - 文件上传模块
@@ -415,18 +407,14 @@ paths:
                 file:
                   type: string
                   format: binary
+                  description: "要上传的文件"
       responses:
         "200":
           description: "上传成功"
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  url:
-                    type: string
-                    format: uri
-                    example: "https://cdn.example.com/images/12345.jpg"
+                $ref: '#/components/schemas/FileUploadResponseVO'
 
 # ======================================================
 # Reusable Components - 可复用组件
@@ -440,25 +428,120 @@ components:
       description: "在请求的Authorization头中添加'Bearer '前缀和Token，例如: 'Bearer ey...'"
 
   schemas:
-    UserSummaryVO:
+    # -------------------
+    # Request Schemas
+    # -------------------
+    LoginRequest:
+      type: object
+      required: [code]
+      properties:
+        code:
+          type: string
+          description: "微信登录凭证 wx.login() 获取的 code"
+          example: "0a3j4H1..."
+
+    CreateProductRequest:
+      type: object
+      required: [title, description, price, stock, categoryId, imageUrls]
+      properties:
+        title:
+          type: string
+          example: "九成新山地自行车"
+        description:
+          type: string
+          example: "详细描述一下你的宝贝吧..."
+        price:
+          type: number
+          format: float
+        stock:
+          type: integer
+          default: 1
+        categoryId:
+          type: string
+          example: "cat_digital"
+        imageUrls:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            format: uri
+
+    UpdateUserRequest:
       type: object
       properties:
-        userId:
-          type: string
-          example: "user_abc"
         nickname:
           type: string
-          example: "Emily Chen"
+          description: "新昵称 (可选)"
         avatarUrl:
           type: string
           format: uri
-          example: "https://example.com/avatar.jpg"
-        ## [CHANGE] 新增 joinDate 字段以匹配UI显示“2021年加入”
-        joinDate:
+          description: "新头像URL (可选, 前端需先调用文件上传接口)"
+
+    AddFavoriteRequest:
+      type: object
+      required: [productId]
+      properties:
+        productId:
           type: string
-          format: date
-          example: "2021-01-01"
-          
+          description: "要收藏的商品ID"
+
+    CreateOrderRequest:
+      type: object
+      required: [productId, quantity]
+      properties:
+        productId:
+          type: string
+        quantity:
+          type: integer
+          default: 1
+
+    # -------------------
+    # View Object (VO) Schemas
+    # -------------------
+    LoginResponseVO:
+      type: object
+      properties:
+        token:
+          type: string
+          description: "JWT Token，后续请求需在Header中携带"
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        user:
+          $ref: '#/components/schemas/UserProfileVO'
+
+    FileUploadResponseVO:
+      type: object
+      properties:
+        url:
+          type: string
+          format: uri
+          description: "文件的可访问URL"
+          example: "https://cdn.example.com/images/12345.jpg"
+
+    WeChatPayParamsVO:
+      type: object
+      description: "调用wx.requestPayment所需的支付参数"
+      properties:
+        timeStamp:
+          type: string
+          description: "时间戳，从1970年1月1日00:00:00至今的秒数"
+        nonceStr:
+          type: string
+          description: "随机字符串，不长于32位"
+        package:
+          type: string
+          description: "统一下单接口返回的 prepay_id 参数值，格式：prepay_id=xxx"
+        signType:
+          type: string
+          description: "签名类型，默认为RSA"
+          example: "RSA"
+        paySign:
+          type: string
+          description: "签名"
+        orderId:
+          type: string
+          description: "本次支付关联的系统内部订单ID，可用于支付成功后的页面跳转"
+
+
     UserProfileVO:
       type: object
       properties:
@@ -475,18 +558,6 @@ components:
           type: string
           format: date
           example: "2021-01-01"
-          
-    ## [NEW] 新增 UpdateUserDTO 用于更新用户信息
-    UpdateUserDTO:
-      type: object
-      properties:
-        nickname:
-          type: string
-          description: "新昵称 (可选)"
-        avatarUrl:
-          type: string
-          format: uri
-          description: "新头像URL (可选, 前端先上传文件获取URL)"
 
     ProductSummaryVO:
       type: object
@@ -531,12 +602,11 @@ components:
           type: integer
           example: 1
         sellerInfo:
-          $ref: '#/components/schemas/UserSummaryVO'
+          $ref: '#/components/schemas/UserProfileVO'
         isFavorite:
           type: boolean
           description: "当前用户是否已收藏该商品"
           example: false
-        ## [CHANGE] 新增 isFollowingSeller 字段，用于控制“关注”按钮的状态
         isFollowingSeller:
           type: boolean
           description: "当前用户是否已关注该卖家"
@@ -548,33 +618,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ReviewVO'
-            
-    CreateProductDTO:
-      type: object
-      required: [title, description, price, stock, categoryId, imageUrls]
-      properties:
-        title:
-          type: string
-          example: "九成新山地自行车"
-        description:
-          type: string
-          example: "详细描述一下你的宝贝吧..."
-        price:
-          type: number
-          format: float
-        stock:
-          type: integer
-          default: 1
-        categoryId:
-          type: string
-          example: "cat_digital"
-        imageUrls:
-          type: array
-          minItems: 1
-          items:
-            type: string
-            format: uri
-            
+
     CategoryVO:
       type: object
       properties:
@@ -587,59 +631,60 @@ components:
         iconUrl:
           type: string
           format: uri
-          
+
     OrderSummaryVO:
       type: object
+      description: "订单摘要信息。由于业务规则为一次只购买一件商品，该结构已扁平化，直接包含商品信息。"
       properties:
         orderId:
           type: string
+          description: "系统内部的订单ID"
           example: "order_789"
         status:
           type: string
-          example: "待付款"
+          description: "订单状态"
+          example: "ToShip"
         totalPrice:
           type: number
           format: float
-          example: 128.00
-        productCount:
-          type: integer
-          example: 2
-        orderItems:
-          type: array
-          items:
-            $ref: '#/components/schemas/OrderItemVO'
-            
-    OrderItemVO:
-      type: object
-      properties:
+          description: "订单总金额，等于 priceAtPurchase * quantity"
+          example: 150.00
         productId:
           type: string
-        title:
+          description: "所购买的商品ID"
+          example: "prod_456"
+        productTitle:
           type: string
-          example: "复古风格纯棉格子衬衫"
-        mainImageUrl:
+          description: "所购买的商品标题"
+          example: "复古牛仔夹克"
+        productMainImageUrl:
           type: string
           format: uri
-        price:
+          description: "所购买的商品主图"
+        priceAtPurchase:
           type: number
           format: float
+          description: "下单时商品的单价快照"
+          example: 150.00
         quantity:
           type: integer
-          
+          description: "购买数量"
+          example: 1
+
     ReviewVO:
       type: object
       properties:
         reviewId:
           type: string
         author:
-          $ref: '#/components/schemas/UserSummaryVO'
+          $ref: '#/components/schemas/UserProfileVO'
         content:
           type: string
           example: "很棒的夹克！和描述的一模一样。"
         createdAt:
           type: string
           format: date-time
-          
+
     NotificationVO:
       type: object
       properties:
@@ -661,3 +706,42 @@ components:
         isRead:
           type: boolean
           example: false
+
+    # -------------------
+    # List Wrapper VOs
+    # -------------------
+    ProductListVO:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductSummaryVO'
+        totalPages:
+          type: integer
+        totalElements:
+          type: integer
+
+    OrderListVO:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderSummaryVO'
+        totalPages:
+          type: integer
+        totalElements:
+          type: integer
+
+    NotificationListVO:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/NotificationVO'
+        totalPages:
+          type: integer
+        totalElements:
+          type: integer

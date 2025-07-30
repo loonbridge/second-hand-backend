@@ -24,3 +24,9 @@ spring.datasource.password=your_database_password
 # MYBATIS-PLUS 配置
 # ===================================================================
 mybatis-plus.mapper-locations=classpath*:mapper/*.xml
+
+
+
+# app小程序的appId，secret
+app.miniapp.appId=
+app.miniapp.secret=

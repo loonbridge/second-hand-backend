@@ -5,6 +5,9 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.time.LocalDateTime;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
 import lombok.Data;
 
 /**
@@ -13,35 +16,44 @@ import lombok.Data;
  */
 @TableName(value ="review")
 @Data
+@Entity
 public class Review {
     /**
      * 评论ID (主键)
      */
-    @TableId(type = IdType.AUTO)
+    @TableId(value = "review_id", type = IdType.AUTO)
+    @Id
     private Long reviewId;
+
+
 
     /**
      * 评论内容
      */
+    @TableField(value = "content")
     private String content;
 
     /**
      * 评分 (1-5)
      */
+    @TableField(value = "rating")
     private Integer rating;
 
     /**
      * 商品ID (外键)
      */
+    @TableField(value = "product_id")
     private Long productId;
 
     /**
      * 作者用户ID (外键)
      */
+    @TableField(value = "user_id")
     private Long userId;
 
     /**
      * 评论时间
      */
+    @TableField(value = "created_at")
     private LocalDateTime createdAt;
 }

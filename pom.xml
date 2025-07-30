@@ -62,11 +62,39 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
-
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>2.19.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>2.8.9</version>
+        </dependency>
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct-processor</artifactId>
+            <version>1.6.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+            <version>1.6.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains</groupId>
+            <artifactId>annotations</artifactId>
+            <version>13.0</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 
@@ -95,6 +123,59 @@
                         </exclude>
                     </excludes>
                 </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.openapitools</groupId>
+                <artifactId>openapi-generator-maven-plugin</artifactId>
+                <!-- 建议使用一个较新的版本 -->
+                <version>7.14.0</version>
+                <executions>
+                    <execution>
+                        <id>openapi-generator</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+
+                        <configuration>
+                            <!-- 1. 指定您的 OpenAPI 规范文件 -->
+                            <!-- 您可以直接链接到 SwaggerHub 导出的 URL，或者下载到本地 -->
+                            <inputSpec>${project.basedir}/src/main/resources/api/swagger.yaml</inputSpec>
+                            <!-- 2. 指定生成器为 Spring -->
+                            <generatorName>spring</generatorName>
+
+
+                            <!-- 指定您希望生成的接口和模型放在哪个包下 -->
+                            <apiPackage>cn.edu.guet.secondhandtransactionbackend.controller.api</apiPackage>
+                            <modelPackage>cn.edu.guet.secondhandtransactionbackend.dto</modelPackage>
+                            <skipIfSpecIsUnchanged>true</skipIfSpecIsUnchanged>
+                            <ignoreFileOverride>${project.basedir}/.openapi-generator-ignore</ignoreFileOverride>
+
+
+                            <!-- 3. 【关键配置】进行精细化控制 ,用于传递给特定生成器解析的参数-->
+                            <configOptions>
+                                <!-- =================================================================== -->
+                                <!-- == 这是解决您问题的最关键配置：只生成接口，不生成Controller实现 == -->
+                                <interfaceOnly>true</interfaceOnly>
+                                <!-- =================================================================== -->
+
+                                <!-- 告诉生成器您在使用 Spring Boot 3+ -->
+                                <useSpringBoot3>true</useSpringBoot3>
+
+                                <!-- 其他推荐配置，让生成的代码更干净 -->
+                                <useTags>true</useTags> <!-- 使用 tags 对 API 进行分组 -->
+                                <serializableModel>false</serializableModel> <!-- 让模型实现 Serializable 接口 -->
+                                <openApiNullable>false</openApiNullable> <!-- 禁用 @OpenApiNullable 注解，更简洁 -->
+                                <skipDefaultInterface>true</skipDefaultInterface> <!-- 不生成默认的 Api 接口 -->
+                            </configOptions>
+
+                            <!-- 指定生成代码的输出目录 -->
+                            <output>${project.build.directory}/generated-sources/openapi</output>
+
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
