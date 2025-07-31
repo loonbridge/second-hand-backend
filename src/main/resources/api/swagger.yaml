@@ -521,6 +521,8 @@ components:
       type: object
       description: "调用wx.requestPayment所需的支付参数"
       properties:
+        appId:
+          type: string
         timeStamp:
           type: string
           description: "时间戳，从1970年1月1日00:00:00至今的秒数"
