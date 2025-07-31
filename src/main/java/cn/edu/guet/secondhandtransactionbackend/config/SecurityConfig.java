@@ -3,6 +3,7 @@ package cn.edu.guet.secondhandtransactionbackend.config;
 
 import cn.edu.guet.secondhandtransactionbackend.config.filter.JwtAuthenticationFilter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -20,6 +21,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    
+    @Value("${file.access.url}")
+    private String fileAccessUrl;
 
     @Autowired
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
@@ -36,6 +40,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // 明确放行登录接口（根据您的OpenAPI定义，路径是 /auth/login）
                         .requestMatchers("/auth/login").permitAll()
+                        // 放行文件访问路径
+                        .requestMatchers(fileAccessUrl + "/**").permitAll()
                         // 为了方便调试，也可以放行swagger文档
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll()
                         // 除了上面放行的，其他所有请求都必须经过认证
@@ -49,7 +55,7 @@ public class SecurityConfig {
                 // 将我们自定义的JWT过滤器添加到过滤器链中，
                 // 它会在Spring Security的用户名密码认证过滤器之前执行
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-
+                
         return http.build();
     }
 }

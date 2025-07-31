@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: "二手优选小程序 API V1.2"
   description: "这是一个为“二手优选”微信小程序设计的后端API文档，涵盖了用户、商品、订单、消息等核心模块。V1.2版本对所有请求和响应进行了Schema封装（Request/VO后缀），并根据小程序支付流程优化了订单接口，结构更清晰，对接更友好。"
-  version: "1.2.0"
+  version: "1.2.3"
 servers:
   - url: https://api.example.com/v1
     description: 生产环境服务器
@@ -394,7 +394,7 @@ paths:
     post:
       tags:
         - Files
-      summary: "上传文件（如商品图片、用户头像）"
+      summary: "上传多个文件（如商品图片、用户头像）" #<-- [修改] 摘要更新为“多个文件”
       security:
         - BearerAuth: []
       requestBody:
@@ -404,16 +404,18 @@ paths:
             schema:
               type: object
               properties:
-                file:
-                  type: string
-                  format: binary
-                  description: "要上传的文件"
+                files: # <-- [关键修改 1] key 从 'file' 改为 'files' 以匹配后端代码
+                  type: array # <-- [关键修改 2] 类型改为数组 array
+                  items:
+                    type: string
+                    format: binary
+                  description: "要上传的文件列表。在Swagger UI或Postman中，您可以多次选择此字段来添加多个文件。"
       responses:
         "200":
-          description: "上传成功"
+          description: "所有文件上传成功"
           content:
             application/json:
-              schema:
+              schema: # <-- [关键修改 3] 直接定义响应体结构
                 $ref: '#/components/schemas/FileUploadResponseVO'
 
 # ======================================================
@@ -511,11 +513,13 @@ components:
     FileUploadResponseVO:
       type: object
       properties:
-        url:
-          type: string
-          format: uri
+        urls:
+          type: array
+          items:
+            type: string
+            format: uri
           description: "文件的可访问URL"
-          example: "https://cdn.example.com/images/12345.jpg"
+          example: [ "https://cdn.example.com/images/12345.jpg" ]
 
     WeChatPayParamsVO:
       type: object
