@@ -5,7 +5,12 @@
       "Bash(git add src/main/java/cn/edu/guet/secondhandtransactionbackend/dto/ .claude/)",
       "Bash(git commit -m \"$(cat <<''EOF''\nchore: Add .gitkeep to track empty dto directories\n\nAdded .gitkeep files to the subdirectories within the dto folder to ensure Git tracks these currently empty directories.\nAlso, tracking the .claude directory for project-specific settings.\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(git push origin main)",
-      "Bash(git add .)"
+      "Bash(git add .)",
+      "Bash(git commit -m \"feat: 更新通过 openapi codegen 生成的 schema 和 apis\n\n使用 openapi-generator-maven-plugin 插件根据 openapi/swagger.yaml 文件生成了新的 controller 层代码和相关的 DTOs。\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")",
+      "Bash(git checkout -b cyq-dev)",
+      "Bash(git add README.md)",
+      "Bash(git commit -m \"docs: 添加包含项目设置说明的 README.md\")",
+      "Bash(git push)"
     ],
     "deny": []
   }

@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: "二手优选小程序 API V1.2"
   description: "这是一个为“二手优选”微信小程序设计的后端API文档，涵盖了用户、商品、订单、消息等核心模块。V1.2版本对所有请求和响应进行了Schema封装（Request/VO后缀），并根据小程序支付流程优化了订单接口，结构更清晰，对接更友好。"
-  version: "1.2.0"
+  version: "1.2.3"
 servers:
   - url: https://api.example.com/v1
     description: 生产环境服务器
@@ -394,7 +394,7 @@ paths:
     post:
       tags:
         - Files
-      summary: "上传文件（如商品图片、用户头像）"
+      summary: "上传多个文件（如商品图片、用户头像）" #<-- [修改] 摘要更新为“多个文件”
       security:
         - BearerAuth: []
       requestBody:
@@ -404,16 +404,18 @@ paths:
             schema:
               type: object
               properties:
-                file:
-                  type: string
-                  format: binary
-                  description: "要上传的文件"
+                files: # <-- [关键修改 1] key 从 'file' 改为 'files' 以匹配后端代码
+                  type: array # <-- [关键修改 2] 类型改为数组 array
+                  items:
+                    type: string
+                    format: binary
+                  description: "要上传的文件列表。在Swagger UI或Postman中，您可以多次选择此字段来添加多个文件。"
       responses:
         "200":
-          description: "上传成功"
+          description: "所有文件上传成功"
           content:
             application/json:
-              schema:
+              schema: # <-- [关键修改 3] 直接定义响应体结构
                 $ref: '#/components/schemas/FileUploadResponseVO'
 
 # ======================================================
@@ -511,16 +513,20 @@ components:
     FileUploadResponseVO:
       type: object
       properties:
-        url:
-          type: string
-          format: uri
+        urls:
+          type: array
+          items:
+            type: string
+            format: uri
           description: "文件的可访问URL"
-          example: "https://cdn.example.com/images/12345.jpg"
+          example: [ "https://cdn.example.com/images/12345.jpg" ]
 
     WeChatPayParamsVO:
       type: object
       description: "调用wx.requestPayment所需的支付参数"
       properties:
+        appId:
+          type: string
         timeStamp:
           type: string
           description: "时间戳，从1970年1月1日00:00:00至今的秒数"
@@ -541,23 +547,6 @@ components:
           type: string
           description: "本次支付关联的系统内部订单ID，可用于支付成功后的页面跳转"
 
-    UserSummaryVO:
-      type: object
-      properties:
-        userId:
-          type: string
-          example: "user_abc"
-        nickname:
-          type: string
-          example: "Emily Chen"
-        avatarUrl:
-          type: string
-          format: uri
-          example: "https://example.com/avatar.jpg"
-        joinDate:
-          type: string
-          format: date
-          example: "2021-01-01"
 
     UserProfileVO:
       type: object
@@ -619,7 +608,7 @@ components:
           type: integer
           example: 1
         sellerInfo:
-          $ref: '#/components/schemas/UserSummaryVO'
+          $ref: '#/components/schemas/UserProfileVO'
         isFavorite:
           type: boolean
           description: "当前用户是否已收藏该商品"
@@ -651,41 +640,42 @@ components:
 
     OrderSummaryVO:
       type: object
+      description: "订单摘要信息。由于业务规则为一次只购买一件商品，该结构已扁平化，直接包含商品信息。"
       properties:
         orderId:
           type: string
+          description: "系统内部的订单ID"
           example: "order_789"
         status:
           type: string
-          example: "待付款"
+          description: "订单状态"
+          example: "ToShip"
         totalPrice:
           type: number
           format: float
-          example: 128.00
-        productCount:
-          type: integer
-          example: 2
-        orderItems:
-          type: array
-          items:
-            $ref: '#/components/schemas/OrderItemVO'
-
-    OrderItemVO:
-      type: object
-      properties:
+          description: "订单总金额，等于 priceAtPurchase * quantity"
+          example: 150.00
         productId:
           type: string
-        title:
+          description: "所购买的商品ID"
+          example: "prod_456"
+        productTitle:
           type: string
-          example: "复古风格纯棉格子衬衫"
-        mainImageUrl:
+          description: "所购买的商品标题"
+          example: "复古牛仔夹克"
+        productMainImageUrl:
           type: string
           format: uri
-        price:
+          description: "所购买的商品主图"
+        priceAtPurchase:
           type: number
           format: float
+          description: "下单时商品的单价快照"
+          example: 150.00
         quantity:
           type: integer
+          description: "购买数量"
+          example: 1
 
     ReviewVO:
       type: object
@@ -693,7 +683,7 @@ components:
         reviewId:
           type: string
         author:
-          $ref: '#/components/schemas/UserSummaryVO'
+          $ref: '#/components/schemas/UserProfileVO'
         content:
           type: string
           example: "很棒的夹克！和描述的一模一样。"

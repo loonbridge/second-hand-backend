@@ -5,11 +5,11 @@
 <mapper namespace="cn.edu.guet.secondhandtransactionbackend.mapper.OrderItemMapper">
 
     <resultMap id="BaseResultMap" type="cn.edu.guet.secondhandtransactionbackend.entity.OrderItem">
-            <id property="orderItemId" column="order_item_id" />
-            <result property="orderId" column="order_id" />
-            <result property="productId" column="product_id" />
+            <id property="order_item_id" column="order_item_id" />
+            <result property="order_id" column="order_id" />
+            <result property="product_id" column="product_id" />
             <result property="quantity" column="quantity" />
-            <result property="priceAtPurchase" column="price_at_purchase" />
+            <result property="price_at_purchase" column="price_at_purchase" />
     </resultMap>
 
     <sql id="Base_Column_List">

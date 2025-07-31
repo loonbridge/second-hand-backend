@@ -8,11 +8,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 技术栈
 
-- **后端框架**: Spring Boot (v3.3.1)
+- **后端框架**: Spring Boot (v3.5.3)
 - **编程语言**: Java 21
-- **数据访问**: MyBatis-Plus (v3.5.7)
+- **数据访问**: MyBatis-Plus (v3.5.9)
 - **数据库**: MySQL
-- **认证**: JWT (java-jwt v4.4.0), 认证逻辑主要位于 `cn.edu.guet.secondhandtransactionbackend.util.JwtUtil`。
+- **认证**: JWT (java-jwt v4.5.0), 认证逻辑主要位于 `cn.edu.guet.secondhandtransactionbackend.util.JwtUtil`。
 - **构建工具**: Apache Maven
 - **API 文档**: OpenAPI 3.0 (`api/swagger.yaml`)
 
@@ -44,15 +44,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - **运行所有测试**:
   ```shell
-  ./mvnw test
+  ./mvnw 分析.json
   ```
 
 - **运行单个测试类或方法**:
   ```shell
   # 运行单个测试类
-  ./mvnw test -Dtest="YourTestClassName"
+  ./mvnw 分析.json -Dtest="YourTestClassName"
   # 运行单个测试方法
-  ./mvnw test -Dtest="YourTestClassName#yourTestMethodName"
+  ./mvnw 分析.json -Dtest="YourTestClassName#yourTestMethodName"
   ```
 
 ## 关键开发流程
