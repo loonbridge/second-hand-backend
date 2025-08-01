@@ -1,100 +1,88 @@
 package cn.edu.guet.secondhandtransactionbackend.controller.file;
 
-import cn.edu.guet.secondhandtransactionbackend.assembler.FileAssembler;
 import cn.edu.guet.secondhandtransactionbackend.controller.api.FilesApi;
 import cn.edu.guet.secondhandtransactionbackend.dto.FileUploadResponseVO;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import software.amazon.awssdk.core.sync.RequestBody;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.model.S3Exception;
 
+import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.UUID;
 
 @RestController
 public class FileController implements FilesApi {
 
-    @Autowired
-    private S3Client s3Client;
+    @Value("${file.upload.path}")
+    private String uploadPath;
 
-    @Autowired
-    private FileAssembler fileAssembler;
+    @Value("${file.access.url}")
+    private String fileAccessUrl;
 
-    @Value("${aws.s3.bucket-name}")
-    private String bucketName;
-
-    @Value("${aws.s3.endpoint}")
-    private String endpoint;
-
-    @Value("${aws.s3.show-base-url}")
-    private String showBaseUrl;
-
-    /**
-     * @param files 前端需要以 "files" 作为 key 来上传文件列表
-     * @return 返回包含所有上传成功文件的 URL 列表
-     */
     @Override
-    public ResponseEntity<FileUploadResponseVO> filesUploadPost(@RequestParam("files") List<MultipartFile> files) {
-        if (files == null || files.isEmpty()) {
-            return ResponseEntity.badRequest().body(null);
+    public ResponseEntity<FileUploadResponseVO> filesUploadPost(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            return ResponseEntity.badRequest().build();
         }
 
-        List<String> urls = new ArrayList<>();
-
-        for (MultipartFile file : files) {
-            if (file.isEmpty()) {
-                continue; // 跳过空文件
+        try {
+            System.out.println("接收到文件上传请求: " + file.getOriginalFilename() + ", 大小: " + file.getSize() + " bytes");
+            
+            // 创建上传目录（如果不存在）
+            Path uploadPathObj = Paths.get(uploadPath);
+            if (!Files.exists(uploadPathObj)) {
+                System.out.println("创建上传根目录: " + uploadPathObj.toAbsolutePath());
+                Files.createDirectories(uploadPathObj);
             }
 
-            try {
-                // 1. 生成唯一的文件名，保留原始文件扩展名
-                String originalFilename = file.getOriginalFilename();
-//                String fileExtension = "";
-//                if (originalFilename != null && originalFilename.contains(".")) {
-//                    fileExtension = originalFilename.substring(originalFilename.lastIndexOf("."));
-//                }
-
-                //上传的文件名称+原始扩展
-                String uniqueFileName = UUID.randomUUID().toString().substring(0, 6) + originalFilename;
-
-                // 2. 创建上传请求
-                PutObjectRequest putObjectRequest = PutObjectRequest.builder()
-                        .bucket(bucketName)
-                        .key(uniqueFileName)
-                        .contentType(file.getContentType()) // 设置Content-Type，以便浏览器正确解析
-                        .build();
-
-                // 3. 上传文件
-                s3Client.putObject(putObjectRequest,
-                        RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
-
-                // 4. 拼接并添加 URL 到列表
-                // 注意：确保您的代理域名后面不需要再跟 bucket 名称
-                String fileUrl = showBaseUrl + "/" + uniqueFileName;
-                urls.add(fileUrl);
-
-            } catch (S3Exception | IOException e) {
-                // 记录日志，处理异常
-                e.printStackTrace();
-                // 如果有一个文件上传失败，可以根据业务需求决定是继续还是直接返回错误
-                // 这里选择返回一个服务器内部错误，并附带错误信息
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .build();
-
-
+            // 生成唯一文件名
+            String originalFilename = file.getOriginalFilename();
+            String fileExtension = "";
+            if (originalFilename != null && originalFilename.contains(".")) {
+                fileExtension = originalFilename.substring(originalFilename.lastIndexOf("."));
             }
+            String uniqueFilename = UUID.randomUUID().toString() + fileExtension;
+            System.out.println("生成唯一文件名: " + uniqueFilename);
+
+            // 使用当前日期，不再使用固定日期
+            String datePath = java.time.LocalDate.now().toString().replace("-", "/");
+            System.out.println("使用当前日期路径: " + datePath);
+            
+            Path datePathObj = uploadPathObj.resolve(datePath);
+            if (!Files.exists(datePathObj)) {
+                System.out.println("创建日期目录: " + datePathObj.toAbsolutePath());
+                Files.createDirectories(datePathObj);
+            }
+
+            Path filePath = datePathObj.resolve(uniqueFilename);
+            System.out.println("文件将保存至: " + filePath.toAbsolutePath());
+            
+            // 保存文件
+            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+            System.out.println("文件保存成功");
+
+            // 构建访问URL
+            String fileUrl = fileAccessUrl + "/" + datePath + "/" + uniqueFilename;
+            System.out.println("生成访问URL: " + fileUrl);
+
+            // 创建响应对象
+            FileUploadResponseVO response = new FileUploadResponseVO();
+            response.setUrl(URI.create(fileUrl));
+            
+            // 输出日志以便调试
+            System.out.println("文件上传成功: " + fileUrl);
+
+            return ResponseEntity.ok(response);
+        } catch (IOException e) {
+            System.err.println("文件上传失败: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).build();
         }
-
-        // 所有文件上传成功后，返回 URL 列表
-        return ResponseEntity.ok(new FileUploadResponseVO().urls(fileAssembler.toUriList(urls)));
     }
 }

@@ -8,11 +8,13 @@ import cn.edu.guet.secondhandtransactionbackend.dto.WeChatPayParamsVO;
 import cn.edu.guet.secondhandtransactionbackend.dto.order.OrderListBO;
 import cn.edu.guet.secondhandtransactionbackend.service.OrderService;
 import cn.edu.guet.secondhandtransactionbackend.util.AuthenticationHelper;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.security.Principal;
 import java.util.Optional;
 
 @RestController
@@ -68,8 +70,6 @@ public class OrderController implements OrdersApi {
     public ResponseEntity<WeChatPayParamsVO> ordersPost(CreateOrderRequest createOrderRequest) {
 
         WeChatPayParamsVO pay = orderService.createOrder(createOrderRequest);
-        return Optional.ofNullable(pay)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build());
+        return null;
     }
 }
