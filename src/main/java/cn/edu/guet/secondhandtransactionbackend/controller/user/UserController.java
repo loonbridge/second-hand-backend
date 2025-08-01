@@ -3,8 +3,10 @@ package cn.edu.guet.secondhandtransactionbackend.controller.user;
 import cn.edu.guet.secondhandtransactionbackend.assembler.ProductAssembler;
 import cn.edu.guet.secondhandtransactionbackend.assembler.UserAssembler;
 import cn.edu.guet.secondhandtransactionbackend.controller.api.UsersApi;
-import cn.edu.guet.secondhandtransactionbackend.dto.*;
-import cn.edu.guet.secondhandtransactionbackend.dto.product.ProductListBO;
+import cn.edu.guet.secondhandtransactionbackend.dto.AddFavoriteRequest;
+import cn.edu.guet.secondhandtransactionbackend.dto.ProductListVO;
+import cn.edu.guet.secondhandtransactionbackend.dto.UpdateUserRequest;
+import cn.edu.guet.secondhandtransactionbackend.dto.UserProfileVO;
 import cn.edu.guet.secondhandtransactionbackend.dto.product.ProductSummaryBO;
 import cn.edu.guet.secondhandtransactionbackend.dto.user.UserProfileBO;
 import cn.edu.guet.secondhandtransactionbackend.dto.user.UserProfileDTO;
@@ -93,6 +95,11 @@ public class UserController  implements UsersApi {
 
         //如果有认证用户，获取用户ID
         Long currentId = currentUserId.get();
+
+        //自己不能关注自己
+        if (currentId.equals(Long.valueOf(id))) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
         //调用用户服务关注用户
         boolean save = userUserFollowFnnService.save(new UserUserFollowFnn()
                 .setFollowerUserId(currentId)

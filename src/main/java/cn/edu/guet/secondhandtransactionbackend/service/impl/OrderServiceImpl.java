@@ -2,8 +2,11 @@ package cn.edu.guet.secondhandtransactionbackend.service.impl;
 
 import cn.edu.guet.secondhandtransactionbackend.dto.CreateOrderRequest;
 import cn.edu.guet.secondhandtransactionbackend.dto.WeChatPayParamsVO;
+import cn.edu.guet.secondhandtransactionbackend.dto.order.OrderDetailBO;
 import cn.edu.guet.secondhandtransactionbackend.dto.order.OrderListBO;
 import cn.edu.guet.secondhandtransactionbackend.dto.order.OrderSummaryBO;
+import cn.edu.guet.secondhandtransactionbackend.dto.product.ProductDetailBO;
+import cn.edu.guet.secondhandtransactionbackend.dto.user.UserProfileBO;
 import cn.edu.guet.secondhandtransactionbackend.entity.Order;
 import cn.edu.guet.secondhandtransactionbackend.entity.Product;
 import cn.edu.guet.secondhandtransactionbackend.entity.ProductImage;
@@ -34,6 +37,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -150,7 +154,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order>
                 .collect(Collectors.toMap(ProductImage::getProductId, ProductImage::getImageUrl, (existing, replacement) -> existing));
 
 
-//        Map<Long,String> mainImageMap=null;
+        //        Map<Long,String> mainImageMap=null;
 
         // --- 3. 组装成最终的 BO (Business Object) 列表 ---
         List<OrderSummaryBO> orderSummaryBOS = orderRecords.stream().map(order -> {
@@ -193,48 +197,50 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order>
     @Transactional
     public WeChatPayParamsVO createOrder(CreateOrderRequest createOrderRequest) {
         //转换dto
-
         Integer quantity = createOrderRequest.getQuantity();
-
-        //获取商品id中的价格
-
         String productId = createOrderRequest.getProductId();
+        String addressId = createOrderRequest.getAddressId();
+        String phoneNumber = createOrderRequest.getPhoneNumber();
 
-        //TODO：可能的错误
+        //获取商品信息并验证库存
         Product product = productService.getById(Long.valueOf(productId));
+        if (product == null) {
+            throw new RuntimeException("商品不存在");
+        }
+
+        if (product.getStock() < quantity) {
+            throw new RuntimeException("商品库存不足");
+        }
 
         BigDecimal price = product.getPrice();
 
-
-        //获取当前用户的openid
-
         //获取当前用户的id
-
         Optional<Long> currentUserId = authenticationHelper.getCurrentUserId();
-
         if (currentUserId.isEmpty()) {
             throw new RuntimeException("未登录或用户ID无效");
         }
 
         Long currentId = currentUserId.get();
 
-        //获取当前用户的openid
-
-        LambdaQueryWrapper<User> userLambdaQueryWrapper = new LambdaQueryWrapper<>();
-        userLambdaQueryWrapper.eq(User::getUserId, currentId);
-        User currentUser = userService.getOne(userLambdaQueryWrapper);
-
+        //获取当前用户信息（包含openid）
+        User currentUser = userService.getById(currentId);
+        if (currentUser == null) {
+            throw new RuntimeException("用户信息不存在");
+        }
         String openid = currentUser.getOpenid();
 
+        // 根据addressId获取地址信息（这里需要您实现地址服务）
+        // 暂时使用传入的参数作为地址快照
+        String receiverNameSnapshot = "收件人姓名"; // 从地址服务获取
+        String phoneNumberSnapshot = phoneNumber != null ? phoneNumber : "默认手机号"; // 使用传入的或地址中的默认手机号
+        String shippingAddressSnapshot = "完整地址信息"; // 从地址服务获取
 
         //创建新订单
         Order order = new Order();
 
         // 订单号
         String orderId = UUID.randomUUID().toString().replace("-", "");
-
         order.setOrderNumber(orderId);
-
 
         //保存订单到数据库中
         order.setStatus("TO_PAY");
@@ -243,107 +249,149 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order>
         order.setTotalPrice(price.multiply(BigDecimal.valueOf(quantity)));
         order.setUserId(currentId);
         order.setProductId(Long.valueOf(productId));
-        order.setOrderId(null); // 让Mybatis-Plus自动生成ID
+        order.setSellerId(product.getUserId()); // 从商品信息中获取卖家ID
+        order.setReceiverNameSnapshot(receiverNameSnapshot);
+        order.setPhoneNumberSnapshot(phoneNumberSnapshot);
+        order.setShippingAddressSnapshot(shippingAddressSnapshot);
+        order.setCreatedAt(LocalDateTime.now());
 
-
-        //插入
+        //插入订单
         this.save(order);
+
+        // 减少商品库存
+        product.setStock(product.getStock() - quantity);
+        productService.updateById(product);
 
         //获取到订单ID
         Long orderIdLong = order.getOrderId();
 
         //调用微信支付API创建订单
-
-        //打印变量
-        System.out.println("AppId: " + appId);
-        System.out.println("MerchantId: " + merchantId);
-        System.out.println("PrivateKeyPath: " + privateKeyPath);
-        System.out.println("MerchantSerialNumber: " + merchantSerialNumber);
-        System.out.println("ApiV3Key: " + apiV3Key);
-
-        Config config =
-                new RSAAutoCertificateConfig.Builder()
-                        .merchantId(merchantId)
-                        .privateKeyFromPath(privateKeyPath)
-                        .merchantSerialNumber(merchantSerialNumber)
-                        .apiV3Key(apiV3Key)
-                        .build();
-
-        System.out.println("Config created: " + config.toString());
+        Config config = new RSAAutoCertificateConfig.Builder()
+                .merchantId(merchantId)
+                .privateKeyFromPath(privateKeyPath)
+                .merchantSerialNumber(merchantSerialNumber)
+                .apiV3Key(apiV3Key)
+                .build();
 
         JsapiService service = new JsapiService.Builder().config(config).build();
-        // request.setXxx(val)设置所需参数，具体参数可见Request定义
         PrepayRequest request = new PrepayRequest();
         Amount amount = new Amount();
-        amount.setTotal(1);
+        amount.setTotal(1); // 实际应该是订单总金额的分为单位
         request.setAmount(amount);
-        request.setAppid("wxcfa592ba7403e3e3");
-        request.setMchid("1623889015");
-        request.setDescription("测试商品标题");
-        request.setNotifyUrl("https://notify_url");
-        // 订单号
-//        String orderId = UUID.randomUUID().toString().replace("-", "");
+        request.setAppid(appId);
+        request.setMchid(merchantId);
+        request.setDescription(product.getTitle());
+        request.setNotifyUrl(notifyUrl);
         request.setOutTradeNo(orderId);
+
         Payer payer = new Payer();
         payer.setOpenid(openid);
-//        payer.setOpenid("oFHpr7ftyAbPpAaS0TSuCUx4MyIU");
         request.setPayer(payer);
+
         PrepayResponse response = service.prepay(request);
         System.out.println(response.getPrepayId());
 
-//        JsapiServiceExtension service = new JsapiServiceExtension.Builder()
-//                .config(config)
-//                .signType("RSA") // 不填默认为RSA
-//                .build();
-//
-//
-//        System.out.println("Creating WeChat Pay order with parameters:");
-//
-//// 跟之前下单示例一样，填充预下单参数
-//
-//
-//        PrepayRequest request = new PrepayRequest();
-//        Amount amount = new Amount();
-//        amount.setTotal(quantity);
-//        request.setAmount(amount);
-//        request.setAppid(appId);
-//        request.setMchid(merchantId);
-//
-//        request.setDescription("测试商品标题");
-//        //设置调用微信支付的回调地址
-//        //注意：这里的notify_url是微信支付回调地址，必须是https协议
-//        request.setNotifyUrl(notifyUrl);
-//        //交易订单号
-////        request.setOutTradeNo("out_trade_no_001");
-//
-//        request.setOutTradeNo(orderId);
-//
-//
-//
-//        Payer payer = new Payer();
-//        payer.setOpenid(openid);
-//        request.setPayer(payer);
-//
-//
-//// 一步获取调起支付所需的全部参数（包含已构造好的签名）
-//        PrepayWithRequestPaymentResponse response = service.prepayWithRequestPayment(request);
-//
-//        System.out.println(response.toString());
-//
-//
-//        WeChatPayParamsVO weChatPayParamsVO = new WeChatPayParamsVO();
-//
-//        weChatPayParamsVO.appId(appId)
-//
-//                .paySign(response.getPaySign()).signType(response.getSignType())
-//                .timeStamp(response.getTimeStamp()).nonceStr(response.getNonceStr())
-//                .orderId(orderIdLong.toString())
-//                .setPackage(response.getPackageVal());
-//                ;
+        // TODO: 构造并返回微信支付参数
+        return null;
+    }
 
+    @Override
+    public Optional<OrderDetailBO> getOrderDetail(String orderId, Long currentUserId) {
+        // 查询订单基本信息
+        LambdaQueryWrapper<Order> orderWrapper = new LambdaQueryWrapper<>();
+        orderWrapper.eq(Order::getOrderNumber, orderId)
+                .and(wrapper -> wrapper.eq(Order::getUserId, currentUserId)
+                        .or()
+                        .eq(Order::getSellerId, currentUserId)); // 买家或卖家都可以查看
 
+        Order order = this.getOne(orderWrapper);
+        if (order == null) {
+            return Optional.empty();
+        }
 
-        return  null;
+        OrderDetailBO orderDetailBO = new OrderDetailBO();
+        BeanUtils.copyProperties(order, orderDetailBO);
+        orderDetailBO.setOrderId(order.getOrderNumber());
 
+        // 获取商品信息
+        Product product = productService.getById(order.getProductId());
+        if (product != null) {
+            ProductDetailBO productDetailBO = new ProductDetailBO();
+            BeanUtils.copyProperties(product, productDetailBO);
+
+            // 获取商品图片
+            LambdaQueryWrapper<ProductImage> imageWrapper = new LambdaQueryWrapper<>();
+            imageWrapper.eq(ProductImage::getProductId, product.getProductId())
+                    .orderByAsc(ProductImage::getDisplayOrder);
+            List<ProductImage> images = productImageService.list(imageWrapper);
+            List<String> imageUrls = images.stream()
+                    .map(ProductImage::getImageUrl)
+                    .collect(Collectors.toList());
+            productDetailBO.setImageUrls(imageUrls);
+
+            orderDetailBO.setProductSnapshot(productDetailBO);
+        }
+
+        // 获取买家信息
+        User buyer = userService.getById(order.getUserId());
+        if (buyer != null) {
+            UserProfileBO buyerBO = new UserProfileBO();
+            BeanUtils.copyProperties(buyer, buyerBO);
+            orderDetailBO.setBuyerInfo(buyerBO);
+        }
+
+        // 获取卖家信息
+        if (order.getSellerId() != null) {
+            User seller = userService.getById(order.getSellerId());
+            if (seller != null) {
+                UserProfileBO sellerBO = new UserProfileBO();
+                BeanUtils.copyProperties(seller, sellerBO);
+                orderDetailBO.setSellerInfo(sellerBO);
+            }
+        }
+
+        // 设置物流信息快照
+        OrderDetailBO.ShippingInfoBO shippingInfo = new OrderDetailBO.ShippingInfoBO();
+        shippingInfo.setAddress(order.getShippingAddressSnapshot());
+        // trackingNumber和carrier字段暂时为null，实际项目中需要从物流系统获取
+        shippingInfo.setTrackingNumber(null);
+        shippingInfo.setCarrier(null);
+        orderDetailBO.setShippingInfo(shippingInfo);
+
+        return Optional.of(orderDetailBO);
+    }
+
+    @Override
+    @Transactional
+    public Optional<OrderDetailBO> cancelOrder(String orderId, Long currentUserId) {
+        // 查询订单
+        LambdaQueryWrapper<Order> orderWrapper = new LambdaQueryWrapper<>();
+        orderWrapper.eq(Order::getOrderNumber, orderId)
+                .eq(Order::getUserId, currentUserId); // 只有买家可以取消订单
+
+        Order order = this.getOne(orderWrapper);
+        if (order == null) {
+            return Optional.empty();
+        }
+
+        // 检查订单状态是否可以取消
+        if (!"ToPay".equals(order.getStatus()) && !"ToShip".equals(order.getStatus())) {
+            return Optional.empty(); // 只有待支付和待发货状态可以取消
+        }
+
+        // 更新订单状态为已取消
+        order.setStatus("Canceled");
+        order.setCanceledAt(java.time.LocalDateTime.now());
+        this.updateById(order);
+
+        // 恢复商品库存
+        Product product = productService.getById(order.getProductId());
+        if (product != null) {
+            product.setStock(product.getStock() + order.getQuantity());
+            productService.updateById(product);
+        }
+
+        // 返回更新后的订单详情
+        return getOrderDetail(orderId, currentUserId);
     }
 }

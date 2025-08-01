@@ -2,8 +2,6 @@ package cn.edu.guet.secondhandtransactionbackend.dto.review;
 
 import cn.edu.guet.secondhandtransactionbackend.dto.user.UserProfileBO;
 import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
 import lombok.experimental.Accessors;
 
 import java.io.Serializable;
@@ -19,5 +17,6 @@ public class ReviewBO implements Serializable {
     private String content;
     private LocalDateTime createdAt;
 
+    private Integer rating;
     private UserProfileBO author;
 }

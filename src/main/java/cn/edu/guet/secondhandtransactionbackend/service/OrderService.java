@@ -2,6 +2,7 @@ package cn.edu.guet.secondhandtransactionbackend.service;
 
 import cn.edu.guet.secondhandtransactionbackend.dto.CreateOrderRequest;
 import cn.edu.guet.secondhandtransactionbackend.dto.WeChatPayParamsVO;
+import cn.edu.guet.secondhandtransactionbackend.dto.order.OrderDetailBO;
 import cn.edu.guet.secondhandtransactionbackend.dto.order.OrderListBO;
 import cn.edu.guet.secondhandtransactionbackend.entity.Order;
 import com.baomidou.mybatisplus.extension.service.IService;
@@ -18,4 +19,22 @@ public interface OrderService extends IService<Order> {
     OrderListBO getOrders(String status, Integer page, Integer size, Long currentUserId);
 
     WeChatPayParamsVO createOrder(CreateOrderRequest createOrderRequest);
+
+    /**
+     * 获取订单详情
+     *
+     * @param orderId       订单ID
+     * @param currentUserId 当前用户ID
+     * @return 订单详情BO
+     */
+    Optional<OrderDetailBO> getOrderDetail(String orderId, Long currentUserId);
+
+    /**
+     * 取消订单
+     *
+     * @param orderId       订单ID
+     * @param currentUserId 当前用户ID
+     * @return 取消后的订单详情BO
+     */
+    Optional<OrderDetailBO> cancelOrder(String orderId, Long currentUserId);
 }

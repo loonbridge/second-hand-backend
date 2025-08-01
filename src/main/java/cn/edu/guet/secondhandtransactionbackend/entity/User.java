@@ -4,12 +4,10 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import java.time.LocalDateTime;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
 import lombok.Data;
+import lombok.experimental.Accessors;
+
+import java.time.LocalDateTime;
 
 /**
  * 用户实体表
@@ -17,12 +15,12 @@ import lombok.Data;
  */
 @TableName(value ="user")
 @Data
-@Entity
+@Accessors(chain = true)
+
 public class User {
     /**
      * 用户ID (主键)
      */
-    @Id
     @TableId(value = "user_id", type = IdType.AUTO)
     private Long userId;
 

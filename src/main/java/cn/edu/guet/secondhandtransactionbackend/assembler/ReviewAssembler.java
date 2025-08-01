@@ -1,27 +1,25 @@
 package cn.edu.guet.secondhandtransactionbackend.assembler;
 
+import cn.edu.guet.secondhandtransactionbackend.dto.ReviewListVO;
 import cn.edu.guet.secondhandtransactionbackend.dto.ReviewVO;
 import cn.edu.guet.secondhandtransactionbackend.dto.review.ReviewBO;
+import cn.edu.guet.secondhandtransactionbackend.dto.review.ReviewListBO;
+import cn.edu.guet.secondhandtransactionbackend.util.CommonMappingUtils;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Mappings;
 
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-
-
-@Mapper(componentModel = "spring", uses = {UserAssembler.class})
+@Mapper(componentModel = "spring", uses = {UserAssembler.class, CommonMappingUtils.class})
 public interface ReviewAssembler {
 
+    @Mappings({
+            @Mapping(source = "createdAt", target = "createdAt", qualifiedByName = "toOffsetDateTime"),
+            @Mapping(source = "author.avatarUrl", target = "author.avatarUrl", qualifiedByName = "toUri")
+    })
+    ReviewVO toReviewVO(ReviewBO reviewBO);
 
-
-  default LocalDateTime toLocalDateTime(OffsetDateTime offsetDateTime) {
-    return offsetDateTime == null ? null : offsetDateTime.toLocalDateTime();
-  }
-
-  default OffsetDateTime toOffsetDateTime(LocalDateTime localDateTime) {
-    return localDateTime == null ? null : localDateTime.atOffset(ZoneOffset.ofHours(8)); // 按需调整时区
-  }
-
-  // 不需要显式的 @Mapping，MapStruct 会自动处理
-  ReviewVO toReviewVO(ReviewBO reviewBO);
+    /**
+     * 将ReviewListBO转换为ReviewListVO
+     */
+    ReviewListVO toReviewListVO(ReviewListBO reviewListBO);
 }

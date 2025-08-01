@@ -4,29 +4,23 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.Data;
+import lombok.experimental.Accessors;
 
 import java.time.LocalDateTime;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import lombok.Data;
-import org.springframework.context.annotation.Primary;
-
 /**
  * 消息实体表
- *
  * @TableName notification
  */
-//@TableName(value ="notification")
-//@Data
-@Entity
+@TableName(value = "notification")
+@Data
+@Accessors(chain = true)
 
 public class Notification {
     /**
      * 消息ID (主键)
      */
-    //主键
-    @Id
     @TableId(value = "notification_id", type = IdType.AUTO)
     private Long notificationId;
 
@@ -65,4 +59,10 @@ public class Notification {
      */
     @TableField(value = "created_at")
     private LocalDateTime createdAt;
+
+    /**
+     * 更新时间
+     */
+    @TableField(value = "updated_at")
+    private LocalDateTime updatedAt;
 }
