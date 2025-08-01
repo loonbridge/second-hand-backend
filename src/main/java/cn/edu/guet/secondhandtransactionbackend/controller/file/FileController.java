@@ -58,13 +58,13 @@ public class FileController implements FilesApi {
             try {
                 // 1. 生成唯一的文件名，保留原始文件扩展名
                 String originalFilename = file.getOriginalFilename();
-                String fileExtension = "";
-                if (originalFilename != null && originalFilename.contains(".")) {
-                    fileExtension = originalFilename.substring(originalFilename.lastIndexOf("."));
-                }
+//                String fileExtension = "";
+//                if (originalFilename != null && originalFilename.contains(".")) {
+//                    fileExtension = originalFilename.substring(originalFilename.lastIndexOf("."));
+//                }
 
                 //上传的文件名称+原始扩展
-                String uniqueFileName = UUID.randomUUID().toString() + fileExtension;
+                String uniqueFileName = UUID.randomUUID().toString().substring(0, 6) + originalFilename;
 
                 // 2. 创建上传请求
                 PutObjectRequest putObjectRequest = PutObjectRequest.builder()

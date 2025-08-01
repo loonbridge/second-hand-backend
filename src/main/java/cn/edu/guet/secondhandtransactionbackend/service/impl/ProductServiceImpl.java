@@ -1,6 +1,7 @@
 package cn.edu.guet.secondhandtransactionbackend.service.impl;
 
 import cn.edu.guet.secondhandtransactionbackend.assembler.ProductAssembler;
+import cn.edu.guet.secondhandtransactionbackend.assembler.ProductImageAssembler;
 import cn.edu.guet.secondhandtransactionbackend.assembler.UserAssembler;
 import cn.edu.guet.secondhandtransactionbackend.dto.product.CreateProductDTO;
 import cn.edu.guet.secondhandtransactionbackend.dto.product.ProductDetailBO;
@@ -43,8 +44,10 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product>
 
     private  final UserAssembler userAssembler;
 
+    private final ProductImageAssembler productImageAssembler;
+
     @Autowired
-    public ProductServiceImpl(ProductMapper productMapper, ProductImageService productImageService,
+    public ProductServiceImpl(ProductImageAssembler productImageAssembler, ProductMapper productMapper, ProductImageService productImageService,
                               UserService userService, ReviewService reviewService,
                               UserUserFollowFnnService userUserFollowFnnService,
                               UserProductFavoriteFnnService userProductFavoriteFnnService,
@@ -58,6 +61,7 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product>
         this.userProductFavoriteFnnService = userProductFavoriteFnnService;
         this.productAssembler = productAssembler;
         this.userAssembler = userAssembler;
+        this.productImageAssembler = productImageAssembler;
     }
 
 
@@ -143,7 +147,14 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product>
 ////        TODO（已经实现）：需要实现 ReviewBO   ReviewService.getReviewsByProductId(Long productId)方法
         target.setReviews(reviewService.getReviewsByProductId(productId));
 
+        LambdaQueryWrapper<ProductImage> lambdaQueryWrapper = new LambdaQueryWrapper<>();
 
+        lambdaQueryWrapper.eq(ProductImage::getProductId, productId);
+
+        List<ProductImage> list = productImageService.list(lambdaQueryWrapper);
+
+
+        target.setImageUrls(productImageAssembler.productImagesToUrls(list));
         return target;
     }
 
@@ -186,6 +197,7 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product>
 
         //创建和category的关联
         product.setCategoryId(createProductDTO.getCategoryId());
+
 
         // 不需要再查一次，productId 已自动回填
         // 直接返回创建的 ProductDetailBO
