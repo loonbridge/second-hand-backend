@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 @TableName(value ="user_user_follow_fnn")
 @Data
 @Accessors(chain = true)
+
 public class UserUserFollowFnn {
     /**
      * 关注者ID (主键, 外键)

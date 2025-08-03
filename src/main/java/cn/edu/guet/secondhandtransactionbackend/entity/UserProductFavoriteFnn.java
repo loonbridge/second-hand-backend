@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 @TableName(value ="user_product_favorite_fnn")
 @Data
 @Accessors(chain = true)
+
 public class UserProductFavoriteFnn {
     /**
      * 用户ID (主键, 外键)

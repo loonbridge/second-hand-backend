@@ -124,11 +124,29 @@ public class OrderDetailBO {
      * 物流信息业务对象
      */
     public static class ShippingInfoBO {
+        private String receiverName;
+        private String phoneNumber;
         private String address;
         private String trackingNumber;
         private String carrier;
 
         // Getters and Setters
+        public String getReceiverName() {
+            return receiverName;
+        }
+
+        public void setReceiverName(String receiverName) {
+            this.receiverName = receiverName;
+        }
+
+        public String getPhoneNumber() {
+            return phoneNumber;
+        }
+
+        public void setPhoneNumber(String phoneNumber) {
+            this.phoneNumber = phoneNumber;
+        }
+
         public String getAddress() {
             return address;
         }

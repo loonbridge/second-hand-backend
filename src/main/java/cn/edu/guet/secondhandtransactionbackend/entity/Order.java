@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
  * 订单表 - 已为单商品购买场景优化
  * @TableName order
  */
-@TableName(value = "order")
+@TableName(value = "`order`")
 @Data
 @Accessors(chain = true)
 
@@ -56,24 +56,6 @@ public class Order {
     private BigDecimal totalPrice;
 
     /**
-     * 收件人姓名快照
-     */
-    @TableField(value = "receiver_name_snapshot")
-    private String receiverNameSnapshot;
-
-    /**
-     * 收件人手机号快照
-     */
-    @TableField(value = "phone_number_snapshot")
-    private String phoneNumberSnapshot;
-
-    /**
-     * 完整收货地址快照
-     */
-    @TableField(value = "shipping_address_snapshot")
-    private String shippingAddressSnapshot;
-
-    /**
      * 买家用户ID (外键, 关联user表)
      */
     @TableField(value = "user_id")
@@ -90,6 +72,12 @@ public class Order {
      */
     @TableField(value = "seller_id")
     private Long sellerId;
+
+    /**
+     * 地址ID (外键, 关联address表)
+     */
+    @TableField(value = "address_id")
+    private Long addressId;
 
     /**
      * 创建时间

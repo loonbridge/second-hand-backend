@@ -3,10 +3,12 @@ package cn.edu.guet.secondhandtransactionbackend.assembler;
 import cn.edu.guet.secondhandtransactionbackend.dto.OrderDetailVO;
 import cn.edu.guet.secondhandtransactionbackend.dto.OrderListVO;
 import cn.edu.guet.secondhandtransactionbackend.dto.OrderSummaryVO;
+import cn.edu.guet.secondhandtransactionbackend.dto.WeChatPayParamsVO;
 import cn.edu.guet.secondhandtransactionbackend.dto.order.OrderDetailBO;
 import cn.edu.guet.secondhandtransactionbackend.dto.order.OrderListBO;
 import cn.edu.guet.secondhandtransactionbackend.dto.order.OrderSummaryBO;
 import cn.edu.guet.secondhandtransactionbackend.util.CommonMappingUtils;
+import com.wechat.pay.java.service.payments.jsapi.model.PrepayWithRequestPaymentResponse;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Mappings;
@@ -42,4 +44,6 @@ public interface OrderAssembler {
             @Mapping(source = "buyerInfo.avatarUrl", target = "buyerInfo.avatarUrl", qualifiedByName = "toUri")
     })
     OrderDetailVO toOrderDetailVO(OrderDetailBO orderDetailBO);
+
+    WeChatPayParamsVO toWeChatPayParamsVO(PrepayWithRequestPaymentResponse prepayWithRequestPaymentResponse);
 }

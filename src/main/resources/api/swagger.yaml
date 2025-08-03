@@ -1089,7 +1089,7 @@ components:
         nonceStr:
           type: string
           description: "随机字符串，不长于32位"
-        package:
+        packageVal:
           type: string
           description: "统一下单接口返回的 prepay_id 参数值，格式：prepay_id=xxx"
         signType:

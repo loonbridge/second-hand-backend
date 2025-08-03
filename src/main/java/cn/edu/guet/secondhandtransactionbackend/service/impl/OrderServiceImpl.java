@@ -1,7 +1,9 @@
 package cn.edu.guet.secondhandtransactionbackend.service.impl;
 
+import cn.edu.guet.secondhandtransactionbackend.assembler.OrderAssembler;
 import cn.edu.guet.secondhandtransactionbackend.dto.CreateOrderRequest;
 import cn.edu.guet.secondhandtransactionbackend.dto.WeChatPayParamsVO;
+import cn.edu.guet.secondhandtransactionbackend.dto.address.AddressBO;
 import cn.edu.guet.secondhandtransactionbackend.dto.order.OrderDetailBO;
 import cn.edu.guet.secondhandtransactionbackend.dto.order.OrderListBO;
 import cn.edu.guet.secondhandtransactionbackend.dto.order.OrderSummaryBO;
@@ -12,10 +14,7 @@ import cn.edu.guet.secondhandtransactionbackend.entity.Product;
 import cn.edu.guet.secondhandtransactionbackend.entity.ProductImage;
 import cn.edu.guet.secondhandtransactionbackend.entity.User;
 import cn.edu.guet.secondhandtransactionbackend.mapper.OrderMapper;
-import cn.edu.guet.secondhandtransactionbackend.service.OrderService;
-import cn.edu.guet.secondhandtransactionbackend.service.ProductImageService;
-import cn.edu.guet.secondhandtransactionbackend.service.ProductService;
-import cn.edu.guet.secondhandtransactionbackend.service.UserService;
+import cn.edu.guet.secondhandtransactionbackend.service.*;
 import cn.edu.guet.secondhandtransactionbackend.util.AuthenticationHelper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -24,24 +23,28 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.wechat.pay.java.core.Config;
 import com.wechat.pay.java.core.RSAAutoCertificateConfig;
-import com.wechat.pay.java.service.payments.jsapi.JsapiService;
+import com.wechat.pay.java.service.payments.jsapi.JsapiServiceExtension;
 import com.wechat.pay.java.service.payments.jsapi.model.Amount;
 import com.wechat.pay.java.service.payments.jsapi.model.Payer;
 import com.wechat.pay.java.service.payments.jsapi.model.PrepayRequest;
-import com.wechat.pay.java.service.payments.jsapi.model.PrepayResponse;
+import com.wechat.pay.java.service.payments.jsapi.model.PrepayWithRequestPaymentResponse;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.InputStream;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.security.KeyFactory;
+import java.security.PrivateKey;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -53,6 +56,7 @@ import java.util.stream.Collectors;
 public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order>
         implements OrderService {
 
+    private final OrderAssembler orderAssembler;
     private final RestTemplate restTemplate = new RestTemplate();
     private final AuthenticationHelper authenticationHelper;
 
@@ -60,6 +64,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order>
     private final ProductService productService;
     private final ProductImageService productImageService;
     private final UserService userService;
+    private final AddressService addressService;
     @Value("${app.miniapp.appId}")
     private String appId;
     @Value("${wechat.pay.notifyUrl}")
@@ -69,13 +74,16 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order>
     @Value("${wechat.pay.merchantId}")
     private String merchantId;
 
-    /**
-     * 商户API私钥路径
-     */
-    @Value("${wechat.pay.privateKeyPath}")
-    private String privateKeyPath;
+//    /**
+//     * 商户API私钥路径
+//     */
+//    @Value("${wechat.pay.privateKeyPath}")
+//    private String privateKeyPath;
 
+    @Value("classpath:cert/apiclient_key.pem")
+    private Resource privateKeyResource;
 
+    private PrivateKey privateKey;
     /**
      * 商户证书序列号
      */
@@ -88,15 +96,48 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order>
     @Value("${wechat.pay.apiV3Key}")
     private String apiV3Key;
 
+
     @Autowired
-    public OrderServiceImpl(UserService userService,OrderMapper orderMapper,
+    public OrderServiceImpl(OrderAssembler orderAssembler, UserService userService, OrderMapper orderMapper,
                             ProductService productService,
-                            ProductImageService productImageService, AuthenticationHelper authenticationHelper) {
+                            ProductImageService productImageService, AuthenticationHelper authenticationHelper, AddressService addressService) {
         this.orderMapper = orderMapper;
         this.productService = productService;
         this.productImageService = productImageService;
         this.authenticationHelper = authenticationHelper;
         this.userService = userService;
+        this.addressService = addressService;
+        this.orderAssembler = orderAssembler;
+    }
+
+    /**
+     * 加载商户私钥文件（.pem 格式），并解析为 Java 的 PrivateKey 对象
+     */
+    private PrivateKey loadPrivateKey() {
+        try (InputStream inputStream = privateKeyResource.getInputStream()) {
+            // 读取 PEM 文件并移除头尾和换行符
+            String privateKeyPem = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+            String privateKeyContent = privateKeyPem
+                    .replace("-----BEGIN PRIVATE KEY-----", "")
+                    .replace("-----END PRIVATE KEY-----", "")
+                    .replaceAll("\\s+", "");
+
+            // base64 解码并构造私钥对象
+            byte[] decoded = Base64.getDecoder().decode(privateKeyContent);
+            PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(decoded);
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            return keyFactory.generatePrivate(keySpec);
+        } catch (Exception e) {
+            throw new RuntimeException("加载私钥失败", e);
+        }
+    }
+
+    //构造调用后立马使用
+    @PostConstruct
+    void initWeChatPrivateKey() {
+
+        this.privateKey = loadPrivateKey();
+
     }
 
     @Override
@@ -229,11 +270,12 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order>
         }
         String openid = currentUser.getOpenid();
 
-        // 根据addressId获取地址信息（这里需要您实现地址服务）
-        // 暂时使用传入的参数作为地址快照
-        String receiverNameSnapshot = "收件人姓名"; // 从地址服务获取
-        String phoneNumberSnapshot = phoneNumber != null ? phoneNumber : "默认手机号"; // 使用传入的或地址中的默认手机号
-        String shippingAddressSnapshot = "完整地址信息"; // 从地址服务获取
+        // 根据addressId获取地址信息
+        List<AddressBO> userAddresses = addressService.getUserAddresses(currentId);
+        AddressBO selectedAddress = userAddresses.stream()
+                .filter(addr -> addr.getAddressId().equals(Long.valueOf(addressId)))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("地址不存在或不属于当前用户"));
 
         //创建新订单
         Order order = new Order();
@@ -250,9 +292,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order>
         order.setUserId(currentId);
         order.setProductId(Long.valueOf(productId));
         order.setSellerId(product.getUserId()); // 从商品信息中获取卖家ID
-        order.setReceiverNameSnapshot(receiverNameSnapshot);
-        order.setPhoneNumberSnapshot(phoneNumberSnapshot);
-        order.setShippingAddressSnapshot(shippingAddressSnapshot);
+        order.setAddressId(Long.valueOf(addressId)); // 设置地址ID外键
         order.setCreatedAt(LocalDateTime.now());
 
         //插入订单
@@ -265,18 +305,30 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order>
         //获取到订单ID
         Long orderIdLong = order.getOrderId();
 
-        //调用微信支付API创建订单
+//
+
+
+        //TODO：调用微信支付API创建订单，待完成
         Config config = new RSAAutoCertificateConfig.Builder()
                 .merchantId(merchantId)
-                .privateKeyFromPath(privateKeyPath)
                 .merchantSerialNumber(merchantSerialNumber)
+
+                .privateKey(privateKey)
                 .apiV3Key(apiV3Key)
                 .build();
 
-        JsapiService service = new JsapiService.Builder().config(config).build();
+        System.out.println("config created completed");
+
+        JsapiServiceExtension service = new JsapiServiceExtension.Builder().config(config).build();
+
+        //预支付请求
         PrepayRequest request = new PrepayRequest();
         Amount amount = new Amount();
-        amount.setTotal(1); // 实际应该是订单总金额的分为单位
+
+        //BigDecimal转成整型，单位为分
+        Integer totalPriceInCents = price.multiply(BigDecimal.valueOf(100)).intValue();
+
+        amount.setTotal(totalPriceInCents); // 实际应该是订单总金额的分为单位
         request.setAmount(amount);
         request.setAppid(appId);
         request.setMchid(merchantId);
@@ -288,11 +340,17 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order>
         payer.setOpenid(openid);
         request.setPayer(payer);
 
-        PrepayResponse response = service.prepay(request);
-        System.out.println(response.getPrepayId());
 
-        // TODO: 构造并返回微信支付参数
-        return null;
+        PrepayWithRequestPaymentResponse response = service.prepayWithRequestPayment(request);
+
+
+        // TODO: 构造并返回微信支付�����数
+
+        WeChatPayParamsVO weChatPayParamsVO = orderAssembler.toWeChatPayParamsVO(response);
+
+        weChatPayParamsVO.setOrderId(orderId); // 设置订单ID
+
+        return weChatPayParamsVO;
     }
 
     @Override
@@ -350,9 +408,27 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order>
             }
         }
 
-        // 设置物流信息快照
+        // 获取地址信息
         OrderDetailBO.ShippingInfoBO shippingInfo = new OrderDetailBO.ShippingInfoBO();
-        shippingInfo.setAddress(order.getShippingAddressSnapshot());
+        if (order.getAddressId() != null) {
+            List<AddressBO> userAddresses = addressService.getUserAddresses(order.getUserId());
+            AddressBO address = userAddresses.stream()
+                    .filter(addr -> addr.getAddressId().equals(order.getAddressId()))
+                    .findFirst()
+                    .orElse(null);
+
+            if (address != null) {
+                // 构建完整的地址信息
+                String fullAddress = String.format("%s, %s, %s",
+                        address.getReceiverName(),
+                        address.getPhoneNumber(),
+                        address.getAddress());
+                shippingInfo.setReceiverName(address.getReceiverName());
+                shippingInfo.setPhoneNumber(address.getPhoneNumber());
+                shippingInfo.setAddress(address.getAddress());
+            }
+        }
+
         // trackingNumber和carrier字段暂时为null，实际项目中需要从物流系统获取
         shippingInfo.setTrackingNumber(null);
         shippingInfo.setCarrier(null);
