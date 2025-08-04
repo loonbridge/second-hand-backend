@@ -440,23 +440,39 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order>
     @Override
     @Transactional
     public Optional<OrderDetailBO> cancelOrder(String orderId, Long currentUserId) {
-        // 查询订单
+        // 查询订单 - 优先按订单号查询，如果查不到则按订单ID查询
         LambdaQueryWrapper<Order> orderWrapper = new LambdaQueryWrapper<>();
+
+        // 先尝试按订单号查询
         orderWrapper.eq(Order::getOrderNumber, orderId)
-                .eq(Order::getUserId, currentUserId); // 只有买家可以取消订单
+                .eq(Order::getUserId, currentUserId);
 
         Order order = this.getOne(orderWrapper);
+
+        // 如果按订单号查不到，尝试按订单ID查询
+        if (order == null) {
+            try {
+                Long orderIdLong = Long.valueOf(orderId);
+                orderWrapper.clear();
+                orderWrapper.eq(Order::getOrderId, orderIdLong)
+                        .eq(Order::getUserId, currentUserId);
+                order = this.getOne(orderWrapper);
+            } catch (NumberFormatException e) {
+                // 如果orderId不是数字，则忽略
+            }
+        }
+
         if (order == null) {
             return Optional.empty();
         }
 
         // 检查订单状态是否可以取消
-        if (!"ToPay".equals(order.getStatus()) && !"ToShip".equals(order.getStatus())) {
+        if (!"TO_PAY".equals(order.getStatus()) && !"TO_SHIP".equals(order.getStatus())) {
             return Optional.empty(); // 只有待支付和待发货状态可以取消
         }
 
         // 更新订单状态为已取消
-        order.setStatus("Canceled");
+        order.setStatus("CANCELED");
         order.setCanceledAt(java.time.LocalDateTime.now());
         this.updateById(order);
 
@@ -467,7 +483,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order>
             productService.updateById(product);
         }
 
-        // 返回更新后的订单详情
-        return getOrderDetail(orderId, currentUserId);
+        // 返回更新后的订单详情，使用订单号
+        return getOrderDetail(order.getOrderNumber(), currentUserId);
     }
 }
