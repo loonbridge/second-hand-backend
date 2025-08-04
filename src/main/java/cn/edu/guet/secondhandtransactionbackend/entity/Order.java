@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
+import lombok.experimental.Accessors;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -13,8 +14,10 @@ import java.time.LocalDateTime;
  * 订单表 - 已为单商品购买场景优化
  * @TableName order
  */
-@TableName("`order`")
+@TableName(value = "`order`")
 @Data
+@Accessors(chain = true)
+
 public class Order {
     /**
      * 订单ID (主键)
@@ -65,8 +68,50 @@ public class Order {
     private Long productId;
 
     /**
+     * 卖家用户ID (外键, 冗余字段)
+     */
+    @TableField(value = "seller_id")
+    private Long sellerId;
+
+    /**
+     * 地址ID (外键, 关联address表)
+     */
+    @TableField(value = "address_id")
+    private Long addressId;
+
+    /**
      * 创建时间
      */
     @TableField(value = "created_at")
     private LocalDateTime createdAt;
+
+    /**
+     * 支付时间
+     */
+    @TableField(value = "paid_at")
+    private LocalDateTime paidAt;
+
+    /**
+     * 发货时间
+     */
+    @TableField(value = "shipped_at")
+    private LocalDateTime shippedAt;
+
+    /**
+     * 完成时间
+     */
+    @TableField(value = "completed_at")
+    private LocalDateTime completedAt;
+
+    /**
+     * 取消时间
+     */
+    @TableField(value = "canceled_at")
+    private LocalDateTime canceledAt;
+
+    /**
+     * 更新时间
+     */
+    @TableField(value = "updated_at")
+    private LocalDateTime updatedAt;
 }

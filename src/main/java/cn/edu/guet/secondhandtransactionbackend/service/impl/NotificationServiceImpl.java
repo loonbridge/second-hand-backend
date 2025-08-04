@@ -1,10 +1,21 @@
 package cn.edu.guet.secondhandtransactionbackend.service.impl;
 
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import cn.edu.guet.secondhandtransactionbackend.dto.notification.NotificationBO;
+import cn.edu.guet.secondhandtransactionbackend.dto.notification.NotificationListBO;
 import cn.edu.guet.secondhandtransactionbackend.entity.Notification;
-import cn.edu.guet.secondhandtransactionbackend.service.NotificationService;
 import cn.edu.guet.secondhandtransactionbackend.mapper.NotificationMapper;
+import cn.edu.guet.secondhandtransactionbackend.service.NotificationService;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
 * @author Sammy
@@ -15,8 +26,92 @@ import org.springframework.stereotype.Service;
 public class NotificationServiceImpl extends ServiceImpl<NotificationMapper, Notification>
     implements NotificationService{
 
+    @Override
+    public NotificationListBO getNotifications(String type, Integer page, Integer size, Long currentUserId) {
+        // 构建查询条件
+        LambdaQueryWrapper<Notification> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Notification::getUserId, currentUserId);
+
+        if (type != null && !type.isEmpty()) {
+            queryWrapper.eq(Notification::getType, type);
+        }
+
+        queryWrapper.orderByDesc(Notification::getCreatedAt);
+
+        // 分页查询
+        Page<Notification> mpPage = new Page<>((long) page, (long) size);
+        Page<Notification> notificationPage = this.page(mpPage, queryWrapper);
+
+        List<Notification> notifications = notificationPage.getRecords();
+
+        // 转换为BO
+        List<NotificationBO> notificationBOs = notifications.stream().map(notification -> {
+            NotificationBO notificationBO = new NotificationBO();
+            BeanUtils.copyProperties(notification, notificationBO);
+            notificationBO.setNotificationId(notification.getNotificationId().toString());
+            // 转换Integer类型的isRead为Boolean类型
+            notificationBO.setIsRead(notification.getIsRead() != null && notification.getIsRead() == 1);
+            return notificationBO;
+        }).collect(Collectors.toList());
+
+        // 组装返回结果
+        NotificationListBO notificationListBO = new NotificationListBO();
+        notificationListBO.setItems(notificationBOs);
+        notificationListBO.setTotalPages((int) notificationPage.getPages());
+        notificationListBO.setTotalElements(notificationPage.getTotal());
+
+        return notificationListBO;
+    }
+
+    @Override
+    @Transactional
+    public void markAllAsRead(Long currentUserId) {
+        LambdaUpdateWrapper<Notification> updateWrapper = new LambdaUpdateWrapper<>();
+        updateWrapper.eq(Notification::getUserId, currentUserId)
+                .eq(Notification::getIsRead, 0) // 0表示未读
+                .set(Notification::getIsRead, 1) // 1表示已读
+                .set(Notification::getUpdatedAt, LocalDateTime.now());
+
+        this.update(updateWrapper);
+    }
+
+    @Override
+    @Transactional
+    public boolean markAsRead(String notificationId, Long currentUserId) {
+        LambdaUpdateWrapper<Notification> updateWrapper = new LambdaUpdateWrapper<>();
+        updateWrapper.eq(Notification::getNotificationId, Long.valueOf(notificationId))
+                .eq(Notification::getUserId, currentUserId)
+                .set(Notification::getIsRead, 1) // 1表示已读
+                .set(Notification::getUpdatedAt, LocalDateTime.now());
+
+        return this.update(updateWrapper);
+    }
+
+    @Override
+    @Transactional
+    public boolean deleteNotification(String notificationId, Long currentUserId) {
+        LambdaQueryWrapper<Notification> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Notification::getNotificationId, Long.valueOf(notificationId))
+                .eq(Notification::getUserId, currentUserId);
+
+        return this.remove(queryWrapper);
+    }
+
+    @Override
+    @Transactional
+    public void deleteBatchNotifications(List<String> notificationIds, Long currentUserId) {
+        if (notificationIds == null || notificationIds.isEmpty()) {
+            return;
+        }
+
+        List<Long> ids = notificationIds.stream()
+                .map(Long::valueOf)
+                .collect(Collectors.toList());
+
+        LambdaQueryWrapper<Notification> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.in(Notification::getNotificationId, ids)
+                .eq(Notification::getUserId, currentUserId);
+
+        this.remove(queryWrapper);
+    }
 }
-
-
-
-

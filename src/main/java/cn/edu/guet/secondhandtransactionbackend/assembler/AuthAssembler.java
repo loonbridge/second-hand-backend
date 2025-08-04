@@ -13,7 +13,7 @@ public interface AuthAssembler {
 
     @Mappings({
             @Mapping(source = "jwt", target = "token"),
-            @Mapping(source = "userProfile", target = "user")
+            @Mapping(source = "userProfile", target = "user", qualifiedByName = "toUserProfileVO")
     })
     LoginResponseVO toLoginResponseVO(LoginResponseBO loginResponse);
 

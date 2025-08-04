@@ -5,19 +5,17 @@ import cn.edu.guet.secondhandtransactionbackend.controller.api.ProductsApi;
 import cn.edu.guet.secondhandtransactionbackend.dto.CreateProductRequest;
 import cn.edu.guet.secondhandtransactionbackend.dto.ProductDetailVO;
 import cn.edu.guet.secondhandtransactionbackend.dto.ProductListVO;
-import cn.edu.guet.secondhandtransactionbackend.dto.ProductSummaryVO;
+import cn.edu.guet.secondhandtransactionbackend.dto.UpdateProductRequest;
 import cn.edu.guet.secondhandtransactionbackend.dto.product.CreateProductDTO;
-import cn.edu.guet.secondhandtransactionbackend.dto.product.ProductSummaryBO;
 import cn.edu.guet.secondhandtransactionbackend.dto.product.ProductDetailBO;
+import cn.edu.guet.secondhandtransactionbackend.dto.product.ProductSummaryBO;
 import cn.edu.guet.secondhandtransactionbackend.service.ProductService;
 import cn.edu.guet.secondhandtransactionbackend.util.AuthenticationHelper;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
 
@@ -72,6 +70,11 @@ public class ProductController implements ProductsApi {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    @Override
+    public ResponseEntity<Void> productsIdDelete(String id) {
+        return null;
+    }
+
     /**
      * 获取商品详情
      * 根据商品ID获取详细信息，包括卖家信息、是否已收藏、是否关注卖家等状态
@@ -100,6 +103,11 @@ public class ProductController implements ProductsApi {
         return Optional.ofNullable(productDetailVO)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @Override
+    public ResponseEntity<ProductDetailVO> productsIdPut(String id, UpdateProductRequest updateProductRequest) {
+        return null;
     }
 
     /**
