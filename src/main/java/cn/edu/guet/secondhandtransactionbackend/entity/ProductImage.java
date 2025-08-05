@@ -14,6 +14,7 @@ import lombok.experimental.Accessors;
 @TableName(value ="product_image")
 @Data
 @Accessors(chain = true)
+
 public class ProductImage {
     /**
      * 图片ID (主键)

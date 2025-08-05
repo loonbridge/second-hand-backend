@@ -1,12 +1,11 @@
 package cn.edu.guet.secondhandtransactionbackend.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import java.time.LocalDateTime;
 import lombok.Data;
 import lombok.experimental.Accessors;
+
+import java.time.LocalDateTime;
 
 /**
  * [行为]用户收藏商品(n-n)关系表
@@ -15,12 +14,11 @@ import lombok.experimental.Accessors;
 @TableName(value ="user_product_favorite_fnn")
 @Data
 @Accessors(chain = true)
+
 public class UserProductFavoriteFnn {
     /**
      * 用户ID (主键, 外键)
      */
-
-
     @TableField(value = "user_id")
     private Long userId;
 

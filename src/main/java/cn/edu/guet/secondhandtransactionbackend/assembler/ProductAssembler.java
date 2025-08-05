@@ -5,16 +5,15 @@ import cn.edu.guet.secondhandtransactionbackend.dto.ProductDetailVO;
 import cn.edu.guet.secondhandtransactionbackend.dto.ProductListVO;
 import cn.edu.guet.secondhandtransactionbackend.dto.ProductSummaryVO;
 import cn.edu.guet.secondhandtransactionbackend.dto.product.CreateProductDTO;
-import cn.edu.guet.secondhandtransactionbackend.dto.product.ProductSummaryBO;
 import cn.edu.guet.secondhandtransactionbackend.dto.product.ProductDetailBO;
+import cn.edu.guet.secondhandtransactionbackend.dto.product.ProductSummaryBO;
 import cn.edu.guet.secondhandtransactionbackend.entity.Product;
 import cn.edu.guet.secondhandtransactionbackend.util.CommonMappingUtils;
-import org.mapstruct.*;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Mappings;
+import org.mapstruct.ReportingPolicy;
 
-import java.net.URI;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -34,7 +33,9 @@ public interface ProductAssembler {
      */
     @Mappings({
             @Mapping(target = "price", source = "price"), // BigDecimal -> Float
-            @Mapping(target = "mainImageUrl", source = "mainImageUrl",qualifiedByName = "toUri") // String -> URI
+            @Mapping(target = "mainImageUrl", source = "mainImageUrl", qualifiedByName = "toUri"), // String -> URI
+            @Mapping(target = "categoryId", source = "categoryId"), // Long -> String
+            @Mapping(target = "categoryName", source = "categoryName") // String -> String
     })
     ProductSummaryVO toSummaryVO(ProductSummaryBO product);
 
@@ -72,9 +73,12 @@ public interface ProductAssembler {
      */
     @Mappings({
             // Fix for type mismatch: BO.createdAt -> VO.postedAt
-            @Mapping(source = "createdAt", target = "postedAt"),
+            @Mapping(source = "createdAt", target = "postedAt", qualifiedByName = "toOffsetDateTime"),
+            // 添加分类字段映射
+            @Mapping(source = "categoryId", target = "categoryId"), // Long -> String
+            @Mapping(source = "categoryName", target = "categoryName"), // String -> String
             // Nested object mapping for sellerInfo will be handled by UserAssembler
-            @Mapping(source = "sellerInfo", target = "sellerInfo"),
+            @Mapping(source = "sellerInfo", target = "sellerInfo", qualifiedByName = "toUserProfileVO"),
             // Nested list mapping for reviews will be handled by ReviewAssembler
             @Mapping(source = "reviews", target = "reviews"),
             // imageUris are handled by the String -> URI mapping below
@@ -127,6 +131,7 @@ public interface ProductAssembler {
             @Mapping(source = "product.productId", target = "productId"),
             @Mapping(source = "product.title", target = "title"),
             @Mapping(source = "product.price", target = "price"),
+            @Mapping(source = "product.categoryId", target = "categoryId"),
             @Mapping(source = "mainImageUrl", target = "mainImageUrl")
     })
     ProductSummaryBO fromProduct(Product product, String mainImageUrl);

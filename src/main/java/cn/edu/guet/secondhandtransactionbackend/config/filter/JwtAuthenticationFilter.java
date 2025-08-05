@@ -54,6 +54,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
+            //获取当前用户画像
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(userId);
 
 

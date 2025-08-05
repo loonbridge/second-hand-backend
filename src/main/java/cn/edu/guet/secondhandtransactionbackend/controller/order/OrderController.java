@@ -3,8 +3,10 @@ package cn.edu.guet.secondhandtransactionbackend.controller.order;
 import cn.edu.guet.secondhandtransactionbackend.assembler.OrderAssembler;
 import cn.edu.guet.secondhandtransactionbackend.controller.api.OrdersApi;
 import cn.edu.guet.secondhandtransactionbackend.dto.CreateOrderRequest;
+import cn.edu.guet.secondhandtransactionbackend.dto.OrderDetailVO;
 import cn.edu.guet.secondhandtransactionbackend.dto.OrderListVO;
 import cn.edu.guet.secondhandtransactionbackend.dto.WeChatPayParamsVO;
+import cn.edu.guet.secondhandtransactionbackend.dto.order.OrderDetailBO;
 import cn.edu.guet.secondhandtransactionbackend.dto.order.OrderListBO;
 import cn.edu.guet.secondhandtransactionbackend.service.OrderService;
 import cn.edu.guet.secondhandtransactionbackend.util.AuthenticationHelper;
@@ -60,6 +62,36 @@ public class OrderController implements OrdersApi {
 
 
         return Optional.ofNullable(orderListVO)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @Override
+    public ResponseEntity<OrderDetailVO> ordersIdCancelPost(String id) {
+        Optional<Long> currentUserId = authenticationHelper.getCurrentUserId();
+        if (currentUserId.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Optional<OrderDetailBO> canceledOrder = orderService.cancelOrder(id, currentUserId.get());
+
+        return canceledOrder
+                .map(orderAssembler::toOrderDetailVO)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @Override
+    public ResponseEntity<OrderDetailVO> ordersIdGet(String id) {
+        Optional<Long> currentUserId = authenticationHelper.getCurrentUserId();
+        if (currentUserId.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Optional<OrderDetailBO> orderDetail = orderService.getOrderDetail(id, currentUserId.get());
+
+        return orderDetail
+                .map(orderAssembler::toOrderDetailVO)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }

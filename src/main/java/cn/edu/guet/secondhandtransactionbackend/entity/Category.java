@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
+import lombok.experimental.Accessors;
 
 /**
  * 商品分类实体表
@@ -12,6 +13,8 @@ import lombok.Data;
  */
 @TableName(value ="category")
 @Data
+@Accessors(chain = true)
+
 public class Category {
     /**
      * 分类ID (主键)

@@ -39,6 +39,7 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product>
    private  final  ReviewService reviewService;
    private  final  UserUserFollowFnnService userUserFollowFnnService;
    private  final  UserProductFavoriteFnnService userProductFavoriteFnnService;
+    private final CategoryService categoryService; // 添加CategoryService依赖
 
     private  final  ProductAssembler productAssembler;
 
@@ -51,14 +52,15 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product>
                               UserService userService, ReviewService reviewService,
                               UserUserFollowFnnService userUserFollowFnnService,
                               UserProductFavoriteFnnService userProductFavoriteFnnService,
-                              ProductAssembler productAssembler
-    , UserAssembler userAssembler) {
+                              CategoryService categoryService, // 添加CategoryService参数
+                              ProductAssembler productAssembler, UserAssembler userAssembler) {
         this.productMapper = productMapper;
         this.productImageService = productImageService;
         this.userService = userService;
         this.reviewService = reviewService;
         this.userUserFollowFnnService = userUserFollowFnnService;
         this.userProductFavoriteFnnService = userProductFavoriteFnnService;
+        this.categoryService = categoryService; // 初始化CategoryService
         this.productAssembler = productAssembler;
         this.userAssembler = userAssembler;
         this.productImageAssembler = productImageAssembler;
@@ -82,27 +84,39 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product>
         // 分页查询
         int pageNum = (page == null || page < 1) ? 1 : page;
         int pageSize = (size == null || size < 1) ? 10 : size;
-        Page<Product> mpPage =
-                new Page<>(pageNum, pageSize);
+        Page<Product> mpPage = new Page<>(pageNum, pageSize);
         Page<Product> productPage = productMapper.selectPage(mpPage, queryWrapper);
         List<Product> products = productPage.getRecords();
 
-        //TODO：N+1陷阱
+        // 获取所有涉及的分类ID，批量查询分类信息
+        List<Long> categoryIds = products.stream()
+                .map(Product::getCategoryId)
+                .distinct()
+                .collect(Collectors.toList());
+
+        Map<Long, Category> categoryMap = categoryService.listByIds(categoryIds).stream()
+                .collect(Collectors.toMap(Category::getCategoryId, category -> category));
+
+        //TODO：N+1陷阱 (这里需要优化为批量查询)
         List<ProductSummaryBO> productSummaryBOList = products.stream()
-                .map(product -> new ProductSummaryBO()
-                        .setProductId(product.getProductId())
-                        .setTitle(product.getTitle())
-                        .setPrice(product.getPrice())
-                        .setMainImageUrl(productImageService.getOne(
-                                new QueryWrapper<ProductImage>()
-                                        .eq("product_id", product.getProductId())
-                                        .eq("display_order", 0)
-                        ) != null ? productImageService.getOne(
-                                new QueryWrapper<ProductImage>()
-                                        .eq("product_id", product.getProductId())
-                                        .eq("display_order", 0)
-                        ).getImageUrl() : null)
-                ).toList();
+                .map(product -> {
+                    Category category = categoryMap.get(product.getCategoryId());
+                    return new ProductSummaryBO()
+                            .setProductId(product.getProductId())
+                            .setTitle(product.getTitle())
+                            .setPrice(product.getPrice())
+                            .setCategoryId(product.getCategoryId())
+                            .setCategoryName(category != null ? category.getName() : null)
+                            .setMainImageUrl(productImageService.getOne(
+                                    new QueryWrapper<ProductImage>()
+                                            .eq("product_id", product.getProductId())
+                                            .eq("display_order", 0)
+                            ) != null ? productImageService.getOne(
+                                    new QueryWrapper<ProductImage>()
+                                            .eq("product_id", product.getProductId())
+                                            .eq("display_order", 0)
+                            ).getImageUrl() : null);
+                }).toList();
 
         return productSummaryBOList;
     }
@@ -114,12 +128,18 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product>
 
         Product product = productMapper.selectOne(productQueryWrapper);
 
-
         //使用spring utils的bean拷贝工具，拷贝同名属性
         ProductDetailBO target = new ProductDetailBO();
 
         //拷贝Product的属性到productDetailBO
         BeanUtils.copyProperties(product, target);
+
+        // 查询并设置分类信息
+        if (product.getCategoryId() != null) {
+            Category category = categoryService.getById(product.getCategoryId());
+            target.setCategoryId(product.getCategoryId());
+            target.setCategoryName(category != null ? category.getName() : null);
+        }
 
         //当前用户是否收藏过该商品
         target.setIsFavorite(userProductFavoriteFnnService.exists(
@@ -141,7 +161,6 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product>
        * */
 //        target.setSellerInfo(userService.getUserInfoById(product.getUserId()));   ;
         User one = userService.getOne(new LambdaQueryWrapper<User>().eq(User::getUserId, product.getUserId()));
-
 
         target.setSellerInfo(userAssembler.fromUser(one));
 ////        TODO（已经实现）：需要实现 ReviewBO   ReviewService.getReviewsByProductId(Long productId)方法
@@ -218,9 +237,6 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product>
             return new ArrayList<>(); // 如果没有收藏，返回空列表
         }
 
-
-
-
         //获取商品的summary信息
         List<Long> productIds = list.stream()
                 .map(UserProductFavoriteFnn::getProductId)
@@ -229,41 +245,49 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product>
         // 分页查询
         int pageNum = (page == null || page < 1) ? 1 : page;
         int pageSize = (size == null || size < 1) ? 10 : size;
-        Page<Product> mpPage =
-                new Page<>(pageNum, pageSize);
-
+        Page<Product> mpPage = new Page<>(pageNum, pageSize);
 
         LambdaQueryWrapper<Product> productLambdaQueryWrapper = new LambdaQueryWrapper<>();
-
         productLambdaQueryWrapper.in(Product::getProductId, productIds);
-//                .orderByDesc(Product::getCreatedAt); // 按创建时间降序排列
         Page<Product> productPage = productMapper.selectPage(mpPage, productLambdaQueryWrapper);
 
         List<Product> records = productPage.getRecords();
-        // TODO：将Product转换为ProductSummaryBO
-        
-        //获取封面列表
 
+        // 获取所有涉及的分类ID，批量查询分类信息
+        List<Long> categoryIds = records.stream()
+                .map(Product::getCategoryId)
+                .distinct()
+                .collect(Collectors.toList());
+
+        Map<Long, Category> categoryMap = categoryService.listByIds(categoryIds).stream()
+                .collect(Collectors.toMap(Category::getCategoryId, category -> category));
+
+        //获取封面列表
         LambdaQueryWrapper<ProductImage> productImageLambdaQueryWrapper = new LambdaQueryWrapper<>();
-        
         productImageLambdaQueryWrapper.in(ProductImage::getProductId, productIds)
                 .eq(ProductImage::getDisplayOrder, 0); // 获取封面图片
 
         List<ProductImage> productImages = productImageService.list(productImageLambdaQueryWrapper);
 
         //转成和 List<Product>对应的List<string>
-
-        Map<Long, String> productIdToImageUrlMap  = productImages.stream()
+        Map<Long, String> productIdToImageUrlMap = productImages.stream()
                 .collect(Collectors.toMap(ProductImage::getProductId, ProductImage::getImageUrl, (existing, replacement) -> existing));
 
-
-
-// 根据 products 的顺序生成对应的 mainImageUrls
-        List<String> mainImageUrls = records.stream()
-                .map(product -> productIdToImageUrlMap.get(product.getProductId()))
+        // 手动构建ProductSummaryBO列表，包含分类信息
+        List<ProductSummaryBO> productSummaryBOList = records.stream()
+                .map(product -> {
+                    Category category = categoryMap.get(product.getCategoryId());
+                    String mainImageUrl = productIdToImageUrlMap.get(product.getProductId());
+                    return new ProductSummaryBO()
+                            .setProductId(product.getProductId())
+                            .setTitle(product.getTitle())
+                            .setPrice(product.getPrice())
+                            .setCategoryId(product.getCategoryId())
+                            .setCategoryName(category != null ? category.getName() : null)
+                            .setMainImageUrl(mainImageUrl);
+                })
                 .collect(Collectors.toList());
 
-        return productAssembler.fromProductsInLine(records, mainImageUrls);
-
+        return productSummaryBOList;
     }
 }

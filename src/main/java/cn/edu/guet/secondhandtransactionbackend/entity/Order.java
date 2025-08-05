@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
+import lombok.experimental.Accessors;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -13,8 +14,9 @@ import java.time.LocalDateTime;
  * 订单表 - 已为单商品购买场景优化
  * @TableName order
  */
-@TableName("`order`")
+@TableName(value = "`order`")
 @Data
+@Accessors(chain = true)
 public class Order {
     /**
      * 订单ID (主键)
@@ -53,6 +55,24 @@ public class Order {
     private BigDecimal totalPrice;
 
     /**
+     * 收件人姓名快照
+     */
+    @TableField(value = "receiver_name_snapshot")
+    private String receiverNameSnapshot;
+
+    /**
+     * 收件人手机号快照
+     */
+    @TableField(value = "phone_number_snapshot")
+    private String phoneNumberSnapshot;
+
+    /**
+     * 完整收货地址快照
+     */
+    @TableField(value = "shipping_address_snapshot")
+    private String shippingAddressSnapshot;
+
+    /**
      * 买家用户ID (外键, 关联user表)
      */
     @TableField(value = "user_id")
@@ -65,8 +85,45 @@ public class Order {
     private Long productId;
 
     /**
+     * 卖家用户ID (外键, 冗余字段)
+     */
+    @TableField(value = "seller_id")
+    private Long sellerId;
+
+
+    /**
      * 创建时间
      */
     @TableField(value = "created_at")
     private LocalDateTime createdAt;
+
+    /**
+     * 支付时间
+     */
+    @TableField(value = "paid_at")
+    private LocalDateTime paidAt;
+
+    /**
+     * 发货时间
+     */
+    @TableField(value = "shipped_at")
+    private LocalDateTime shippedAt;
+
+    /**
+     * 完成时间
+     */
+    @TableField(value = "completed_at")
+    private LocalDateTime completedAt;
+
+    /**
+     * 取消时间
+     */
+    @TableField(value = "canceled_at")
+    private LocalDateTime canceledAt;
+
+    /**
+     * 更新时间
+     */
+    @TableField(value = "updated_at")
+    private LocalDateTime updatedAt;
 }

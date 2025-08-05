@@ -10,49 +10,48 @@ import lombok.experimental.Accessors;
 import java.time.LocalDateTime;
 
 /**
- * 消息实体表
- * @TableName notification
+ * 用户收货地址表
+ * @TableName address
  */
-@TableName(value = "notification")
+@TableName(value = "address")
 @Data
 @Accessors(chain = true)
-
-public class Notification {
+public class Address {
     /**
-     * 消息ID (主键)
+     * 地址ID (主键)
      */
-    @TableId(value = "notification_id", type = IdType.AUTO)
-    private Long notificationId;
+    @TableId(value = "address_id", type = IdType.AUTO)
+    private Long addressId;
 
     /**
-     * 消息类型(系统消息, 交易消息)
-     */
-    @TableField(value = "type")
-    private String type;
-
-    /**
-     * 标题
-     */
-    @TableField(value = "title")
-    private String title;
-
-    /**
-     * 内容
-     */
-    @TableField(value = "content")
-    private String content;
-
-    /**
-     * 是否已读
-     */
-    @TableField(value = "is_read")
-    private Integer isRead;
-
-    /**
-     * 接收用户ID (外键)
+     * 所属用户ID (外键)
      */
     @TableField(value = "user_id")
     private Long userId;
+
+    /**
+     * 收件人姓名
+     */
+    @TableField(value = "receiver_name")
+    private String receiverName;
+
+    /**
+     * 收件人手机号
+     */
+    @TableField(value = "phone_number")
+    private String phoneNumber;
+
+    /**
+     * 省市区街道等详细地址
+     */
+    @TableField(value = "full_address")
+    private String fullAddress;
+
+    /**
+     * 是否为默认地址 (0:否, 1:是)
+     */
+    @TableField(value = "is_default")
+    private Integer isDefault;
 
     /**
      * 创建时间
