@@ -1,6 +1,7 @@
 package cn.edu.guet.secondhandtransactionbackend.service;
 
 import cn.edu.guet.secondhandtransactionbackend.dto.notification.NotificationListBO;
+import cn.edu.guet.secondhandtransactionbackend.dto.notification.NotificationVo;
 import cn.edu.guet.secondhandtransactionbackend.entity.Notification;
 import com.baomidou.mybatisplus.extension.service.IService;
 
@@ -56,4 +57,7 @@ public interface NotificationService extends IService<Notification> {
      * @param currentUserId   当前用户ID
      */
     void deleteBatchNotifications(List<String> notificationIds, Long currentUserId);
+
+
+    Notification inNotifications(NotificationVo notificationVo);
 }

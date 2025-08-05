@@ -1,5 +1,6 @@
 package cn.edu.guet.secondhandtransactionbackend.mapper;
 
+import cn.edu.guet.secondhandtransactionbackend.dto.notification.NotificationVo;
 import cn.edu.guet.secondhandtransactionbackend.entity.Notification;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
@@ -12,7 +13,7 @@ import org.apache.ibatis.annotations.Mapper;
 */
 @Mapper
 public interface NotificationMapper extends BaseMapper<Notification> {
-
+    void insertNotification(NotificationVo notificationVo);
 }
 
 

@@ -5,11 +5,16 @@ import cn.edu.guet.secondhandtransactionbackend.controller.api.NotificationsApi;
 import cn.edu.guet.secondhandtransactionbackend.dto.DeleteNotificationsRequest;
 import cn.edu.guet.secondhandtransactionbackend.dto.NotificationListVO;
 import cn.edu.guet.secondhandtransactionbackend.dto.notification.NotificationListBO;
+import cn.edu.guet.secondhandtransactionbackend.dto.notification.NotificationVo;
+import cn.edu.guet.secondhandtransactionbackend.entity.Notification;
+import cn.edu.guet.secondhandtransactionbackend.mapper.NotificationMapper;
 import cn.edu.guet.secondhandtransactionbackend.service.NotificationService;
 import cn.edu.guet.secondhandtransactionbackend.util.AuthenticationHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Optional;
@@ -107,4 +112,15 @@ public class NotificationController implements NotificationsApi {
 
         return ResponseEntity.noContent().build();
     }
+
+
+    @PostMapping("in")
+    public int notificationsPost(@RequestBody NotificationVo notificationVo){
+        Notification notification=notificationService.inNotifications(notificationVo);
+        if (notification != null) {
+            return 1;
+        }
+        return 0;
+    }
+
 }

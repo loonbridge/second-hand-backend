@@ -18,4 +18,12 @@
         notification_id,type,title,content,is_read,user_id,
         created_at
     </sql>
+    <insert id="insertNotification" parameterType="cn.edu.guet.secondhandtransactionbackend.dto.notification.NotificationVo">
+        INSERT INTO notification
+        (type, title, content, is_read, user_id, created_at)  <!-- 移除自增主键 -->
+        VALUES
+        (#{type}, #{title}, #{content}, #{isRead}, #{userId},
+        <if test="createdAt != null">#{createdAt, jdbcType=TIMESTAMP}</if>
+        <if test="createdAt == null">CURRENT_TIMESTAMP</if>)
+    </insert>
 </mapper>

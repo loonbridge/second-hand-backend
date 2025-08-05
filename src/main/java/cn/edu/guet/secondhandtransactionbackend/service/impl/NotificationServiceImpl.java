@@ -2,6 +2,7 @@ package cn.edu.guet.secondhandtransactionbackend.service.impl;
 
 import cn.edu.guet.secondhandtransactionbackend.dto.notification.NotificationBO;
 import cn.edu.guet.secondhandtransactionbackend.dto.notification.NotificationListBO;
+import cn.edu.guet.secondhandtransactionbackend.dto.notification.NotificationVo;
 import cn.edu.guet.secondhandtransactionbackend.entity.Notification;
 import cn.edu.guet.secondhandtransactionbackend.mapper.NotificationMapper;
 import cn.edu.guet.secondhandtransactionbackend.service.NotificationService;
@@ -10,6 +11,7 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -114,4 +116,35 @@ public class NotificationServiceImpl extends ServiceImpl<NotificationMapper, Not
 
         this.remove(queryWrapper);
     }
+
+    private NotificationMapper notificationMapper;
+    @Autowired
+    public void setNotificationMapper(NotificationMapper notificationMapper) {
+        this.notificationMapper = notificationMapper;
+    }
+
+    @Override
+    @Transactional
+    public Notification inNotifications(NotificationVo notificationVo) {
+        // 1. 参数校验
+
+
+        try {
+            // 2. 插入数据库（需确保mapper配置了主键回填）
+            notificationMapper.insertNotification(notificationVo);
+
+            // 3. 从Vo转换为实体（如果需要）
+            Notification notification = new Notification();
+            BeanUtils.copyProperties(notificationVo, notification);
+
+
+            return notification;
+
+        } catch (Exception e) {
+            // 抛出自定义异常，便于上层统一处理
+            throw new RuntimeException("创建通知失败，请稍后重试", e);
+        }
+    }
 }
+
+
