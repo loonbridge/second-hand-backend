@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
  * 订单表 - 已为单商品购买场景优化
  * @TableName order
  */
-@TableName(value = "order")
+@TableName(value = "`order`")
 @Data
 @Accessors(chain = true)
 public class Order {

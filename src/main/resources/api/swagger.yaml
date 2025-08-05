@@ -616,10 +616,10 @@ paths:
       parameters:
         - name: status
           in: query
-          description: "订单状态: ToPay, ToShip, ToReceive, Completed, Canceled"
+          description: "订单状态: TO_PAY, TO_SHIP, TO_RECEIVE, COMPLETED, CANCELED"
           schema:
             type: string
-            enum: [ToPay, ToShip, ToReceive, Completed, Canceled]
+            enum: [TO_PAY, TO_SHIP, TO_RECEIVE, COMPLETED, CANCELED]
         - name: page
           in: query
           description: "页码，从1开始"

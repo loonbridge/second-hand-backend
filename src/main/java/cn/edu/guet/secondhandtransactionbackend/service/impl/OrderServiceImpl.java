@@ -16,6 +16,7 @@ import cn.edu.guet.secondhandtransactionbackend.entity.User;
 import cn.edu.guet.secondhandtransactionbackend.mapper.OrderMapper;
 import cn.edu.guet.secondhandtransactionbackend.service.*;
 import cn.edu.guet.secondhandtransactionbackend.util.AuthenticationHelper;
+import cn.edu.guet.secondhandtransactionbackend.util.OrderStatus;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
@@ -285,7 +286,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order>
         order.setOrderNumber(orderId);
 
         //保存订单到数据库中
-        order.setStatus("TO_PAY");
+        order.setStatus(OrderStatus.TO_PAY);
         order.setPriceAtPurchase(price);
         order.setQuantity(quantity);
         order.setTotalPrice(price.multiply(BigDecimal.valueOf(quantity)));
@@ -457,12 +458,12 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order>
         }
 
         // 检查订单状态是否可以取消
-        if (!"TO_PAY".equals(order.getStatus()) && !"TO_SHIP".equals(order.getStatus())) {
+        if (!OrderStatus.TO_PAY.equals(order.getStatus()) && !OrderStatus.TO_SHIP.equals(order.getStatus())) {
             return Optional.empty(); // 只有待支付和待发货状态可以取消
         }
 
         // 更新订单状态为已取消
-        order.setStatus("CANCELED");
+        order.setStatus(OrderStatus.CANCELED);
         order.setCanceledAt(java.time.LocalDateTime.now());
         this.updateById(order);
 
