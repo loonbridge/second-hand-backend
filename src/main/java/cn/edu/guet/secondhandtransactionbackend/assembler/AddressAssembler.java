@@ -15,15 +15,18 @@ public interface AddressAssembler {
      * 将AddressBO转换为AddressVO
      */
     @Mapping(source = "addressId", target = "addressId")
+    @Mapping(source = "fullAddress", target = "address")
     AddressVO toAddressVO(AddressBO addressBO);
 
     /**
      * 将CreateAddressRequest转换为AddressDTO
      */
+    @Mapping(source = "address", target = "fullAddress")
     AddressDTO toAddressDTO(CreateAddressRequest createAddressRequest);
 
     /**
      * 将UpdateAddressRequest转换为AddressDTO
      */
+    @Mapping(source = "address", target = "fullAddress")
     AddressDTO toAddressDTO(UpdateAddressRequest updateAddressRequest);
 }

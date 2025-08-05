@@ -27,9 +27,9 @@
         <url/>
     </scm>
     <properties>
-        <java.version>21</java.version>
-        <java.compiler.release>21</java.compiler.release>
-        <java.compiler.source>21</java.compiler.source>
+        <java.version>17</java.version>
+        <java.compiler.release>17</java.compiler.release>
+        <java.compiler.source>17</java.compiler.source>
     </properties>
     <dependencies>
         <dependency>
