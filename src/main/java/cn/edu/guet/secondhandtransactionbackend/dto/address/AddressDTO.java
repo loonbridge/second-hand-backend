@@ -11,7 +11,7 @@ public class AddressDTO {
 
     private String phoneNumber;
 
-    private String address;
+    private String fullAddress;
 
     private Boolean isDefault;
 }

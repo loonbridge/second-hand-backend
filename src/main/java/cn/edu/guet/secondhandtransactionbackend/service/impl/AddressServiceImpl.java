@@ -89,9 +89,14 @@ public class AddressServiceImpl extends ServiceImpl<AddressMapper, Address> impl
                 .eq(Address::getUserId, userId));
     }
 
+    /**
+     * 将Address实体转换为AddressBO
+     */
     private AddressBO convertToBO(Address address) {
         AddressBO addressBO = new AddressBO();
         BeanUtils.copyProperties(address, addressBO);
+        // 将Boolean转换为Boolean（实际上这里类型已经匹配）
+        addressBO.setIsDefault(address.getIsDefault() != null && address.getIsDefault() == 1);
         return addressBO;
     }
 }

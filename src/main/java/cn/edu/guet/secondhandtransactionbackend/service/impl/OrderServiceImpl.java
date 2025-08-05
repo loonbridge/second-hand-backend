@@ -292,7 +292,12 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order>
         order.setUserId(currentId);
         order.setProductId(Long.valueOf(productId));
         order.setSellerId(product.getUserId()); // 从商品信息中获取卖家ID
-        order.setAddressId(Long.valueOf(addressId)); // 设置地址ID外键
+
+        // 保存地址快照信息，而不是外键关联
+        order.setReceiverNameSnapshot(selectedAddress.getReceiverName());
+        order.setPhoneNumberSnapshot(phoneNumber != null ? phoneNumber : selectedAddress.getPhoneNumber());
+        order.setShippingAddressSnapshot(selectedAddress.getFullAddress());
+
         order.setCreatedAt(LocalDateTime.now());
 
         //插入订单
@@ -408,26 +413,11 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order>
             }
         }
 
-        // 获取地址信息
+        // 使用订单中保存的地址快照信息
         OrderDetailBO.ShippingInfoBO shippingInfo = new OrderDetailBO.ShippingInfoBO();
-        if (order.getAddressId() != null) {
-            List<AddressBO> userAddresses = addressService.getUserAddresses(order.getUserId());
-            AddressBO address = userAddresses.stream()
-                    .filter(addr -> addr.getAddressId().equals(order.getAddressId()))
-                    .findFirst()
-                    .orElse(null);
-
-            if (address != null) {
-                // 构建完整的地址信息
-                String fullAddress = String.format("%s, %s, %s",
-                        address.getReceiverName(),
-                        address.getPhoneNumber(),
-                        address.getAddress());
-                shippingInfo.setReceiverName(address.getReceiverName());
-                shippingInfo.setPhoneNumber(address.getPhoneNumber());
-                shippingInfo.setAddress(address.getAddress());
-            }
-        }
+        shippingInfo.setReceiverName(order.getReceiverNameSnapshot());
+        shippingInfo.setPhoneNumber(order.getPhoneNumberSnapshot());
+        shippingInfo.setAddress(order.getShippingAddressSnapshot());
 
         // trackingNumber和carrier字段暂时为null，实际项目中需要从物流系统获取
         shippingInfo.setTrackingNumber(null);

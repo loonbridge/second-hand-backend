@@ -10,8 +10,7 @@ import lombok.experimental.Accessors;
 import java.time.LocalDateTime;
 
 /**
- * 用户地址表
- *
+ * 用户收货地址表
  * @TableName address
  */
 @TableName(value = "address")
@@ -25,7 +24,7 @@ public class Address {
     private Long addressId;
 
     /**
-     * 用户ID (外键)
+     * 所属用户ID (外键)
      */
     @TableField(value = "user_id")
     private Long userId;
@@ -37,19 +36,19 @@ public class Address {
     private String receiverName;
 
     /**
-     * 联系电话
+     * 收件人手机号
      */
     @TableField(value = "phone_number")
     private String phoneNumber;
 
     /**
-     * 详细地址
+     * 省市区街道等详细地址
      */
-    @TableField(value = "address")
-    private String address;
+    @TableField(value = "full_address")
+    private String fullAddress;
 
     /**
-     * 是否为默认地址
+     * 是否为默认地址 (0:否, 1:是)
      */
     @TableField(value = "is_default")
     private Integer isDefault;
