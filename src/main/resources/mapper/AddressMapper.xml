@@ -9,14 +9,14 @@
         <result property="userId" column="user_id" jdbcType="BIGINT"/>
         <result property="receiverName" column="receiver_name" jdbcType="VARCHAR"/>
         <result property="phoneNumber" column="phone_number" jdbcType="VARCHAR"/>
-        <result property="address" column="address" jdbcType="VARCHAR"/>
-        <result property="isDefault" column="is_default" jdbcType="BOOLEAN"/>
+        <result property="fullAddress" column="full_address" jdbcType="VARCHAR"/>
+        <result property="isDefault" column="is_default" jdbcType="INTEGER"/>
         <result property="createdAt" column="created_at" jdbcType="TIMESTAMP"/>
         <result property="updatedAt" column="updated_at" jdbcType="TIMESTAMP"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        address_id, user_id, receiver_name, phone_number, address, is_default, created_at, updated_at
+        address_id, user_id, receiver_name, phone_number, full_address, is_default, created_at, updated_at
     </sql>
 
 </mapper>

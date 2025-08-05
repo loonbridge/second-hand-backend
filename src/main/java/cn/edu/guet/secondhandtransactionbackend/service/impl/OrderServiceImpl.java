@@ -16,6 +16,7 @@ import cn.edu.guet.secondhandtransactionbackend.entity.User;
 import cn.edu.guet.secondhandtransactionbackend.mapper.OrderMapper;
 import cn.edu.guet.secondhandtransactionbackend.service.*;
 import cn.edu.guet.secondhandtransactionbackend.util.AuthenticationHelper;
+import cn.edu.guet.secondhandtransactionbackend.util.OrderStatus;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
@@ -285,14 +286,19 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order>
         order.setOrderNumber(orderId);
 
         //保存订单到数据库中
-        order.setStatus("TO_PAY");
+        order.setStatus(OrderStatus.TO_PAY);
         order.setPriceAtPurchase(price);
         order.setQuantity(quantity);
         order.setTotalPrice(price.multiply(BigDecimal.valueOf(quantity)));
         order.setUserId(currentId);
         order.setProductId(Long.valueOf(productId));
         order.setSellerId(product.getUserId()); // 从商品信息中获取卖家ID
-        order.setAddressId(Long.valueOf(addressId)); // 设置地址ID外键
+
+        // 保存地址快照信息，而不是外键关联
+        order.setReceiverNameSnapshot(selectedAddress.getReceiverName());
+        order.setPhoneNumberSnapshot(phoneNumber != null ? phoneNumber : selectedAddress.getPhoneNumber());
+        order.setShippingAddressSnapshot(selectedAddress.getFullAddress());
+
         order.setCreatedAt(LocalDateTime.now());
 
         //插入订单
@@ -408,26 +414,11 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order>
             }
         }
 
-        // 获取地址信息
+        // 使用订单中保存的地址快照信息
         OrderDetailBO.ShippingInfoBO shippingInfo = new OrderDetailBO.ShippingInfoBO();
-        if (order.getAddressId() != null) {
-            List<AddressBO> userAddresses = addressService.getUserAddresses(order.getUserId());
-            AddressBO address = userAddresses.stream()
-                    .filter(addr -> addr.getAddressId().equals(order.getAddressId()))
-                    .findFirst()
-                    .orElse(null);
-
-            if (address != null) {
-                // 构建完整的地址信息
-                String fullAddress = String.format("%s, %s, %s",
-                        address.getReceiverName(),
-                        address.getPhoneNumber(),
-                        address.getAddress());
-                shippingInfo.setReceiverName(address.getReceiverName());
-                shippingInfo.setPhoneNumber(address.getPhoneNumber());
-                shippingInfo.setAddress(address.getAddress());
-            }
-        }
+        shippingInfo.setReceiverName(order.getReceiverNameSnapshot());
+        shippingInfo.setPhoneNumber(order.getPhoneNumberSnapshot());
+        shippingInfo.setAddress(order.getShippingAddressSnapshot());
 
         // trackingNumber和carrier字段暂时为null，实际项目中需要从物流系统获取
         shippingInfo.setTrackingNumber(null);
@@ -467,12 +458,12 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order>
         }
 
         // 检查订单状态是否可以取消
-        if (!"TO_PAY".equals(order.getStatus()) && !"TO_SHIP".equals(order.getStatus())) {
+        if (!OrderStatus.TO_PAY.equals(order.getStatus()) && !OrderStatus.TO_SHIP.equals(order.getStatus())) {
             return Optional.empty(); // 只有待支付和待发货状态可以取消
         }
 
         // 更新订单状态为已取消
-        order.setStatus("CANCELED");
+        order.setStatus(OrderStatus.CANCELED);
         order.setCanceledAt(java.time.LocalDateTime.now());
         this.updateById(order);
 

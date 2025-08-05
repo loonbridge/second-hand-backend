@@ -1,8 +1,8 @@
 openapi: 3.0.3
 info:
-  title: "二手优选小程序 API V1.10"
-  description: "V1.10 版本根据详细的数据库设计，完善了订单和消息的数据模型。订单VO现包含完整的地址快照、卖家信息和生命周期时间戳，消息VO也增加了更新时间，使API响应的数据更全面、更准确。"
-  version: "1.10.0"
+  title: "二手优选小程序 API V1.11"
+  description: "V1.11 版本根据用户反馈，为商品相关的VO(ProductSummaryVO, ProductDetailVO)增加了分类ID和分类名称字段，使前端能方便地获取和展示商品的分类信息。"
+  version: "1.11.0"
 servers:
   - url: https://api.example.com/v1
     description: 生产环境服务器
@@ -30,7 +30,7 @@ tags:
     description: 管理员专属操作
 
 paths:
-  # ... (所有路径定义与上一版本V1.9保持一致)
+  # ... (所有路径定义与上一版本V1.10保持一致)
   /auth/login:
     post:
       tags:
@@ -616,10 +616,10 @@ paths:
       parameters:
         - name: status
           in: query
-          description: "订单状态: ToPay, ToShip, ToReceive, Completed, Canceled"
+          description: "订单状态: TO_PAY, TO_SHIP, TO_RECEIVE, COMPLETED, CANCELED"
           schema:
             type: string
-            enum: [ToPay, ToShip, ToReceive, Completed, Canceled]
+            enum: [TO_PAY, TO_SHIP, TO_RECEIVE, COMPLETED, CANCELED]
         - name: page
           in: query
           description: "页码，从1开始"
@@ -1120,6 +1120,7 @@ components:
           format: date
           example: "2021-01-01"
 
+    # MODIFICATION START
     ProductSummaryVO:
       type: object
       properties:
@@ -1137,7 +1138,17 @@ components:
           type: number
           format: float
           example: 85.00
+        categoryId:
+          type: string
+          description: "商品所属分类的ID"
+          example: "cat_fashion"
+        categoryName:
+          type: string
+          description: "商品所属分类的名称"
+          example: "时尚服饰"
+    # MODIFICATION END
 
+    # MODIFICATION START
     ProductDetailVO:
       type: object
       properties:
@@ -1154,14 +1165,22 @@ components:
           type: number
           format: float
           example: 150.00
+        stock:
+          type: integer
+          example: 1
+        categoryId:
+          type: string
+          description: "商品所属分类的ID"
+          example: "cat_fashion"
+        categoryName:
+          type: string
+          description: "商品所属分类的名称"
+          example: "时尚服饰"
         imageUrls:
           type: array
           items:
             type: string
             format: uri
-        stock:
-          type: integer
-          example: 1
         sellerInfo:
           $ref: '#/components/schemas/UserProfileVO'
         isFavorite:
@@ -1179,6 +1198,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ReviewVO'
+    # MODIFICATION END
 
     CategoryVO:
       type: object

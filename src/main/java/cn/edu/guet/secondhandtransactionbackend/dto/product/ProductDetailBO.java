@@ -26,6 +26,10 @@ public class ProductDetailBO {
 
     private LocalDateTime CreatedAt;
 
+    // 新增分类字段
+    private Long categoryId;
+    private String categoryName;
+
     private UserProfileBO sellerInfo;
 
     private List<String> imageUrls; // 商品图片列表

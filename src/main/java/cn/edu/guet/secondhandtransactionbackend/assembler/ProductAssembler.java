@@ -33,7 +33,9 @@ public interface ProductAssembler {
      */
     @Mappings({
             @Mapping(target = "price", source = "price"), // BigDecimal -> Float
-            @Mapping(target = "mainImageUrl", source = "mainImageUrl",qualifiedByName = "toUri") // String -> URI
+            @Mapping(target = "mainImageUrl", source = "mainImageUrl", qualifiedByName = "toUri"), // String -> URI
+            @Mapping(target = "categoryId", source = "categoryId"), // Long -> String
+            @Mapping(target = "categoryName", source = "categoryName") // String -> String
     })
     ProductSummaryVO toSummaryVO(ProductSummaryBO product);
 
@@ -72,6 +74,9 @@ public interface ProductAssembler {
     @Mappings({
             // Fix for type mismatch: BO.createdAt -> VO.postedAt
             @Mapping(source = "createdAt", target = "postedAt", qualifiedByName = "toOffsetDateTime"),
+            // 添加分类字段映射
+            @Mapping(source = "categoryId", target = "categoryId"), // Long -> String
+            @Mapping(source = "categoryName", target = "categoryName"), // String -> String
             // Nested object mapping for sellerInfo will be handled by UserAssembler
             @Mapping(source = "sellerInfo", target = "sellerInfo", qualifiedByName = "toUserProfileVO"),
             // Nested list mapping for reviews will be handled by ReviewAssembler
@@ -126,6 +131,7 @@ public interface ProductAssembler {
             @Mapping(source = "product.productId", target = "productId"),
             @Mapping(source = "product.title", target = "title"),
             @Mapping(source = "product.price", target = "price"),
+            @Mapping(source = "product.categoryId", target = "categoryId"),
             @Mapping(source = "mainImageUrl", target = "mainImageUrl")
     })
     ProductSummaryBO fromProduct(Product product, String mainImageUrl);
