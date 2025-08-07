@@ -50,10 +50,41 @@ public interface NotificationService extends IService<Notification> {
     boolean deleteNotification(String notificationId, Long currentUserId);
 
     /**
+     * 发送支付成功通知
+     *
+     * @param orderNumber 订单号
+     */
+    void sendPaymentSuccessNotification(String orderNumber);
+
+    /**
+     * 发送发货通知给买家
+     *
+     * @param orderNumber 订单号
+     * @param buyerUserId 买家用户ID
+     */
+    void sendShippingNotification(String orderNumber, Long buyerUserId);
+
+    /**
+     * 发送订单完成通知给卖家
+     *
+     * @param orderNumber  订单号
+     * @param sellerUserId 卖家用户ID
+     */
+    void sendOrderCompletedNotification(String orderNumber, Long sellerUserId);
+
+    /**
+     * 发送订单取消通知
+     *
+     * @param orderNumber 订单号
+     * @param userId      用户ID
+     */
+    void sendOrderCancelledNotification(String orderNumber, Long userId);
+
+    /**
      * 批量删除通知
      *
      * @param notificationIds 通知ID列表
-     * @param currentUserId   当前用户ID
+     * @param currentUserId  当前用户ID
      */
     void deleteBatchNotifications(List<String> notificationIds, Long currentUserId);
 }
