@@ -18,7 +18,7 @@ public interface NotificationAssembler {
     NotificationListVO toNotificationListVO(NotificationListBO notificationListBO);
 
     /**
-     * 将NotificationBO转换为NotificationVO
+     *：TODO： 将NotificationBO转换为NotificationVO
      */
     @Mappings({
             @Mapping(source = "createdAt", target = "createdAt", qualifiedByName = "toOffsetDateTime"),

@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -88,14 +89,22 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product>
         Page<Product> productPage = productMapper.selectPage(mpPage, queryWrapper);
         List<Product> products = productPage.getRecords();
 
+        // 如果没有商品数据，直接返回空列表
+        if (products.isEmpty()) {
+            return new ArrayList<>();
+        }
+
         // 获取所有涉及的分类ID，批量查询分类信息
         List<Long> categoryIds = products.stream()
                 .map(Product::getCategoryId)
                 .distinct()
                 .collect(Collectors.toList());
 
-        Map<Long, Category> categoryMap = categoryService.listByIds(categoryIds).stream()
-                .collect(Collectors.toMap(Category::getCategoryId, category -> category));
+        // 确保categoryIds不为空再进行查询
+        Map<Long, Category> categoryMap = categoryIds.isEmpty() ?
+                new HashMap<>() :
+                categoryService.listByIds(categoryIds).stream()
+                        .collect(Collectors.toMap(Category::getCategoryId, category -> category));
 
         //TODO：N+1陷阱 (这里需要优化为批量查询)
         List<ProductSummaryBO> productSummaryBOList = products.stream()

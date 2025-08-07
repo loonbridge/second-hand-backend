@@ -41,12 +41,12 @@ public class SecurityConfig {
                         // 明确放行登录接口（根据您的OpenAPI定义，路径是 /auth/login）
                         .requestMatchers("/auth/login").permitAll()
                         // 放行文件访问路径
-                        .requestMatchers(fileAccessUrl + "/**").permitAll()
+//                        .requestMatchers(fileAccessUrl + "/**").permitAll()
                         // 为了方便调试，也可以放行swagger文档
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll()
                         // 除了上面放行的，其他所有请求都必须经过认证
-//                        .anyRequest().authenticated()
-                        .anyRequest().permitAll()
+                                .anyRequest().authenticated()
+//                        .anyRequest().permitAll()
                 )
 
                 // 设置Session管理为无状态（STATELESS），不使用Session

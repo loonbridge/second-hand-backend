@@ -59,7 +59,14 @@ public class ProductController implements ProductsApi {
     @Override
     public ResponseEntity<ProductListVO> productsGet(String query, String categoryId, String sellerId, Integer page, Integer size) {
 
-        List<ProductSummaryBO> products = productService.getProducts(query, categoryId, sellerId, page, size);
+        // 处理sellerId为"me"的情况
+        String actualSellerId = sellerId;
+        if ("me".equals(sellerId)) {
+            Optional<Long> currentUserIdOpt = authenticationHelper.getCurrentUserId();
+            actualSellerId = currentUserIdOpt.map(Object::toString).orElse(null);
+        }
+
+        List<ProductSummaryBO> products = productService.getProducts(query, categoryId, actualSellerId, page, size);
 
         // 转成ProductListVO
         ProductListVO productListVO = productAssembler.toProductListVO(products, size);

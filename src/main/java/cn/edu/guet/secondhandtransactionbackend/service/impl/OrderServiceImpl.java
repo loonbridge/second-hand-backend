@@ -30,6 +30,8 @@ import com.wechat.pay.java.service.payments.jsapi.model.Payer;
 import com.wechat.pay.java.service.payments.jsapi.model.PrepayRequest;
 import com.wechat.pay.java.service.payments.jsapi.model.PrepayWithRequestPaymentResponse;
 import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -57,6 +59,8 @@ import java.util.stream.Collectors;
 public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order>
         implements OrderService {
 
+    private static final Logger logger = LoggerFactory.getLogger(OrderServiceImpl.class);
+
     private final OrderAssembler orderAssembler;
     private final RestTemplate restTemplate = new RestTemplate();
     private final AuthenticationHelper authenticationHelper;
@@ -66,6 +70,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order>
     private final ProductImageService productImageService;
     private final UserService userService;
     private final AddressService addressService;
+    private final NotificationService notificationService;
     @Value("${app.miniapp.appId}")
     private String appId;
     @Value("${wechat.pay.notifyUrl}")
@@ -101,7 +106,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order>
     @Autowired
     public OrderServiceImpl(OrderAssembler orderAssembler, UserService userService, OrderMapper orderMapper,
                             ProductService productService,
-                            ProductImageService productImageService, AuthenticationHelper authenticationHelper, AddressService addressService) {
+                            ProductImageService productImageService, AuthenticationHelper authenticationHelper, AddressService addressService, NotificationService notificationService) {
         this.orderMapper = orderMapper;
         this.productService = productService;
         this.productImageService = productImageService;
@@ -109,6 +114,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order>
         this.userService = userService;
         this.addressService = addressService;
         this.orderAssembler = orderAssembler;
+        this.notificationService = notificationService;
     }
 
     /**
@@ -476,5 +482,139 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order>
 
         // 返回更新后的订单详情，使用订单号
         return getOrderDetail(order.getOrderNumber(), currentUserId);
+    }
+
+    @Override
+    @Transactional
+    public boolean updateOrderStatusToPaid(String orderNumber) {
+        try {
+            // 查询订单
+            LambdaQueryWrapper<Order> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(Order::getOrderNumber, orderNumber);
+            Order order = this.getOne(wrapper);
+
+            if (order == null) {
+                logger.error("订单不存在，订单号: {}", orderNumber);
+                return false;
+            }
+
+            // 检查订单状态是否为待支付
+            if (!OrderStatus.TO_PAY.equals(order.getStatus())) {
+                logger.warn("订单状态不是待支付，无法更新为已支付，订单号: {}, 当前状态: {}",
+                        orderNumber, order.getStatus());
+                return false;
+            }
+
+            // 更新订单状态为待发货
+            order.setStatus(OrderStatus.TO_SHIP);
+            order.setPaidAt(LocalDateTime.now());
+            order.setUpdatedAt(LocalDateTime.now());
+
+            boolean result = this.updateById(order);
+
+            if (result) {
+                logger.info("订单支付状态更新成功，订单号: {}", orderNumber);
+            } else {
+                logger.error("订单支付状态更新失败，订单号: {}", orderNumber);
+            }
+
+            return result;
+
+        } catch (Exception e) {
+            logger.error("更新订单支付状态时发生异常，订单号: {}", orderNumber, e);
+            return false;
+        }
+    }
+
+    @Override
+    @Transactional
+    public boolean updateOrderStatusToShipped(String orderNumber, Long currentUserId) {
+        try {
+            // 查询订单
+            LambdaQueryWrapper<Order> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(Order::getOrderNumber, orderNumber)
+                    .eq(Order::getSellerId, currentUserId); // 只有卖家可以发货
+            Order order = this.getOne(wrapper);
+
+            if (order == null) {
+                logger.error("订单不存在或无权限操作，订单号: {}, 用户ID: {}", orderNumber, currentUserId);
+                return false;
+            }
+
+            // 检查订单状态是否为待发货
+            if (!OrderStatus.TO_SHIP.equals(order.getStatus())) {
+                logger.warn("订单状态不是待发货，无法更新为已发货，订单号: {}, 当前状态: {}",
+                        orderNumber, order.getStatus());
+                return false;
+            }
+
+            // 更新订单状态为待收货
+            order.setStatus(OrderStatus.TO_RECEIVE);
+            order.setShippedAt(LocalDateTime.now());
+            order.setUpdatedAt(LocalDateTime.now());
+
+            boolean result = this.updateById(order);
+
+            if (result) {
+                logger.info("订单发货状态更新成功，订单号: {}", orderNumber);
+
+                // 发送发货通知给买家
+                notificationService.sendShippingNotification(orderNumber, order.getUserId());
+            } else {
+                logger.error("订单发货状态更新失败，订单号: {}", orderNumber);
+            }
+
+            return result;
+
+        } catch (Exception e) {
+            logger.error("更新订单发货状态时发生异常，订单号: {}", orderNumber, e);
+            return false;
+        }
+    }
+
+    @Override
+    @Transactional
+    public boolean updateOrderStatusToCompleted(String orderNumber, Long currentUserId) {
+        try {
+            // 查询订单
+            LambdaQueryWrapper<Order> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(Order::getOrderNumber, orderNumber)
+                    .eq(Order::getUserId, currentUserId); // 只有买家可以确认收货
+            Order order = this.getOne(wrapper);
+
+            if (order == null) {
+                logger.error("订单不存在或无权限操作，订单号: {}, 用户ID: {}", orderNumber, currentUserId);
+                return false;
+            }
+
+            // 检查订单状态是否为待收货
+            if (!OrderStatus.TO_RECEIVE.equals(order.getStatus())) {
+                logger.warn("订单状态不是待收货，无法更新为已完成，订单号: {}, 当前状态: {}",
+                        orderNumber, order.getStatus());
+                return false;
+            }
+
+            // 更新订单状态为已完成
+            order.setStatus(OrderStatus.COMPLETED);
+            order.setCompletedAt(LocalDateTime.now());
+            order.setUpdatedAt(LocalDateTime.now());
+
+            boolean result = this.updateById(order);
+
+            if (result) {
+                logger.info("订单完成状态更新成功，订单号: {}", orderNumber);
+
+                // 发送交易完成通知给卖家
+                notificationService.sendOrderCompletedNotification(orderNumber, order.getSellerId());
+            } else {
+                logger.error("订单完成状态更新失败，订单号: {}", orderNumber);
+            }
+
+            return result;
+
+        } catch (Exception e) {
+            logger.error("更新订单完成状态时发生异常，订单号: {}", orderNumber, e);
+            return false;
+        }
     }
 }
